@@ -56,7 +56,7 @@ TESTS_CONFIG = {
             TESTS / "volo_voltage_pkg_tb_wrapper.vhd",  # Testbench wrapper for package
         ],
         toplevel="volo_voltage_pkg_tb_wrapper",
-        test_module="test_volo_voltage_pkg",
+        test_module="test_volo_voltage_pkg_progressive",  # Progressive P1 tests
         category="volo_modules",
     ),
 
