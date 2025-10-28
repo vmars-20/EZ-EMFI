@@ -1,0 +1,42 @@
+feat: Add configurable I/O support (2-4 inputs/outputs) to VoloApp generator
+
+Enable flexible MCC I/O configuration for applications requiring 3-4 channels.
+
+VoloApp Model (models/volo/volo_app.py):
+- Add num_inputs field (default=2, range 2-4)
+- Add num_outputs field (default=2, range 2-4)
+- Pass both fields to template contexts for Jinja2 rendering
+
+VHDL Templates (shared/volo/templates/):
+- volo_main_template.vhd: Conditional InputC/InputD and OutputC/OutputD
+- volo_shim_template.vhd: Pass-through for all configured I/O
+- All placeholder assignments updated for 3-4 outputs
+- Jinja2 conditionals: {% if num_outputs >= 3 %}
+
+DS1140-PD Configuration (DS1140_PD_app.yaml):
+- Set num_inputs: 2 (InputA: trigger, InputB: current monitor)
+- Set num_outputs: 3 (OutputA: trigger, OutputB: intensity, OutputC: FSM debug)
+- Documents three-output architecture for DS1140-PD
+
+Generated Files (VHDL/DS1140_PD_volo_*):
+- DS1140_PD_volo_shim.vhd: 2 inputs + 3 outputs, correct port map
+- DS1140_PD_volo_main.vhd: 2 inputs + 3 outputs, ready for Phase 3
+
+Backward Compatibility:
+- Existing apps default to 2 inputs / 2 outputs (no breaking changes)
+- Opt-in via YAML: set num_inputs/num_outputs as needed
+- All configurations generate valid VHDL
+
+Testing:
+- Verified generation: uv run python tools/generate_volo_app.py
+- All templates render correctly for 2-4 I/O configurations
+- DS1140-PD templates have OutputC for FSM debug visualization
+
+Next Phase: Implement DS1140_PD_volo_main.vhd application logic
+- Three-output architecture (trigger, intensity, FSM debug)
+- FSM observer with 6-bit padding ("000" & fsm_state_3bit)
+- Safety clamping and output control per DS1140_PD_IMPLEMENTATION_GUIDE.md
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>

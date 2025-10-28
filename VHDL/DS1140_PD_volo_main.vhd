@@ -1,16 +1,16 @@
 --------------------------------------------------------------------------------
--- File: {{ app_name }}_volo_main.vhd
--- Generated: {{ timestamp }}
+-- File: DS1140_PD_volo_main.vhd
+-- Generated: 2025-10-28 03:25:21
 -- Generator: tools/generate_volo_app.py (template only)
 --
 -- Description:
---   Application logic for {{ app_name }} VoloApp.
+--   Application logic for DS1140_PD VoloApp.
 --   MCC-agnostic interface with friendly signal names.
 --
 -- Layer 3 of 3-Layer VoloApp Architecture:
 --   Layer 1: MCC_TOP_volo_loader.vhd (static, shared)
---   Layer 2: {{ app_name }}_volo_shim.vhd (generated, register mapping)
---   Layer 3: {{ app_name }}_volo_main.vhd (THIS FILE - hand-written logic)
+--   Layer 2: DS1140_PD_volo_shim.vhd (generated, register mapping)
+--   Layer 3: DS1140_PD_volo_main.vhd (THIS FILE - hand-written logic)
 --
 -- Developer Notes:
 --   - This file is YOURS to edit - implement your application logic here
@@ -21,13 +21,29 @@
 --   - BRAM interface is always exposed (ignore if unused)
 --
 -- Application Signals:
-{% for port in friendly_ports %}
---   {{ port.name }}: {{ port.description }}
-{% endfor %}
+
+--   arm_probe: Arm the probe driver (one-shot operation, READY→ARMED transition)
+
+--   force_fire: Manual trigger for testing (bypasses threshold detection)
+
+--   reset_fsm: Reset state machine to READY state
+
+--   clock_divider: FSM timing control divider (0=÷1, 1=÷2, ..., 15=÷16)
+
+--   arm_timeout: Cycles to wait for trigger before timeout (0-4095, 12-bit used)
+
+--   firing_duration: Number of cycles to remain in FIRING state (max 32)
+
+--   cooling_duration: Number of cycles to remain in COOLING state (min 8)
+
+--   trigger_threshold: Voltage threshold for trigger detection (16-bit signed ±5V, 2.4V = 0x3DCF)
+
+--   intensity: Output intensity voltage (16-bit signed, hardware clamped to 3.0V = 0x4CCD)
+
 --
 -- References:
 --   - docs/VOLO_APP_DESIGN.md
---   - {{ app_name }}_app.yaml
+--   - DS1140_PD_app.yaml
 --   - CLAUDE.md "Standard Control Signals"
 --------------------------------------------------------------------------------
 
@@ -35,7 +51,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
-entity {{ app_name }}_volo_main is
+entity DS1140_PD_volo_main is
     port (
         ------------------------------------------------------------------------
         -- Standard Control Signals
@@ -50,9 +66,25 @@ entity {{ app_name }}_volo_main is
         -- Application Signals (Friendly Names)
         -- These are mapped from Control Registers by the shim layer
         ------------------------------------------------------------------------
-{% for port in friendly_ports %}
-        {{ port.name }} : in  {{ port.vhdl_type }};  -- {{ port.description }}
-{% endfor %}
+
+        arm_probe : in  std_logic;  -- Arm the probe driver (one-shot operation, READY→ARMED transition)
+
+        force_fire : in  std_logic;  -- Manual trigger for testing (bypasses threshold detection)
+
+        reset_fsm : in  std_logic;  -- Reset state machine to READY state
+
+        clock_divider : in  std_logic_vector(7 downto 0);  -- FSM timing control divider (0=÷1, 1=÷2, ..., 15=÷16)
+
+        arm_timeout : in  std_logic_vector(15 downto 0);  -- Cycles to wait for trigger before timeout (0-4095, 12-bit used)
+
+        firing_duration : in  std_logic_vector(7 downto 0);  -- Number of cycles to remain in FIRING state (max 32)
+
+        cooling_duration : in  std_logic_vector(7 downto 0);  -- Number of cycles to remain in COOLING state (min 8)
+
+        trigger_threshold : in  std_logic_vector(15 downto 0);  -- Voltage threshold for trigger detection (16-bit signed ±5V, 2.4V = 0x3DCF)
+
+        intensity : in  std_logic_vector(15 downto 0);  -- Output intensity voltage (16-bit signed, hardware clamped to 3.0V = 0x4CCD)
+
 
         ------------------------------------------------------------------------
         -- BRAM Interface (Always Exposed)
@@ -69,17 +101,14 @@ entity {{ app_name }}_volo_main is
         -- Native types: signed(15 downto 0) for all ADC/DAC channels
         ------------------------------------------------------------------------
         InputA  : in  signed(15 downto 0);
-        InputB  : in  signed(15 downto 0){% if num_inputs >= 3 %};
-        InputC  : in  signed(15 downto 0){% endif %}{% if num_inputs >= 4 %};
-        InputD  : in  signed(15 downto 0){% endif %};
+        InputB  : in  signed(15 downto 0);
         OutputA : out signed(15 downto 0);
-        OutputB : out signed(15 downto 0){% if num_outputs >= 3 %};
-        OutputC : out signed(15 downto 0){% endif %}{% if num_outputs >= 4 %};
-        OutputD : out signed(15 downto 0){% endif %}
+        OutputB : out signed(15 downto 0);
+        OutputC : out signed(15 downto 0)
     );
-end entity {{ app_name }}_volo_main;
+end entity DS1140_PD_volo_main;
 
-architecture rtl of {{ app_name }}_volo_main is
+architecture rtl of DS1140_PD_volo_main is
 
     ----------------------------------------------------------------------------
     -- Internal Signals
@@ -111,9 +140,8 @@ begin
     --     if Reset = '1' then
     --         -- Reset: All outputs to safe defaults
     --         OutputA <= (others => '0');
-    --         OutputB <= (others => '0');{% if num_outputs >= 3 %}
-    --         OutputC <= (others => '0');{% endif %}{% if num_outputs >= 4 %}
-    --         OutputD <= (others => '0');{% endif %}
+    --         OutputB <= (others => '0');
+    --         OutputC <= (others => '0');
     --         -- Reset internal state
     --
     --     elsif rising_edge(Clk) then
@@ -121,16 +149,31 @@ begin
     --             if Enable = '1' then
     --                 -- Normal operation: Implement functionality
     --                 -- Use friendly signals:
-{% for port in friendly_ports %}
-    --                 --   {{ port.name }}
-{% endfor %}
+
+    --                 --   arm_probe
+
+    --                 --   force_fire
+
+    --                 --   reset_fsm
+
+    --                 --   clock_divider
+
+    --                 --   arm_timeout
+
+    --                 --   firing_duration
+
+    --                 --   cooling_duration
+
+    --                 --   trigger_threshold
+
+    --                 --   intensity
+
     --
     --             else
     --                 -- Idle: Hold state, outputs parked
     --                 OutputA <= (others => '0');
-    --                 OutputB <= (others => '0');{% if num_outputs >= 3 %}
-    --                 OutputC <= (others => '0');{% endif %}{% if num_outputs >= 4 %}
-    --                 OutputD <= (others => '0');{% endif %}
+    --                 OutputB <= (others => '0');
+    --                 OutputC <= (others => '0');
     --             end if;
     --         end if;
     --         -- ClkEn='0': Hold state (no updates)
@@ -141,9 +184,8 @@ begin
     -- Placeholder: Remove when implementing
     OutputA <= (others => '0');
     OutputB <= (others => '0');
-{% if num_outputs >= 3 %}    OutputC <= (others => '0');
-{% endif %}{% if num_outputs >= 4 %}    OutputD <= (others => '0');
-{% endif %}
+    OutputC <= (others => '0');
+
 
     ----------------------------------------------------------------------------
     -- Optional: BRAM Instantiation
@@ -174,7 +216,7 @@ begin
     --    - Enable: Gates functional work
     --
     -- 3. Testing:
-    --    - Create CocotB tests in tests/test_{{ app_name | lower }}_volo.py
+    --    - Create CocotB tests in tests/test_ds1140_pd_volo.py
     --    - Test with friendly signals directly
     --    - Simulate without MCC infrastructure
     --

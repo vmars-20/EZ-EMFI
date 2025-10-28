@@ -80,6 +80,8 @@ class VoloApp(BaseModel):
     registers: List[AppRegister] = Field(..., min_length=1, max_length=11)
     author: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
+    num_inputs: int = Field(default=2, ge=2, le=4, description="Number of MCC inputs (2-4, default 2)")
+    num_outputs: int = Field(default=2, ge=2, le=4, description="Number of MCC outputs (2-4, default 2)")
 
     @field_validator('registers')
     @classmethod
@@ -219,6 +221,8 @@ class VoloApp(BaseModel):
             'app_name': self.name,
             'registers': register_mappings,
             'cr_numbers_used': cr_numbers_used,
+            'num_inputs': self.num_inputs,
+            'num_outputs': self.num_outputs,
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
 
@@ -262,6 +266,8 @@ class VoloApp(BaseModel):
         context = {
             'app_name': self.name,
             'friendly_ports': friendly_ports,
+            'num_inputs': self.num_inputs,
+            'num_outputs': self.num_outputs,
             'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
 
