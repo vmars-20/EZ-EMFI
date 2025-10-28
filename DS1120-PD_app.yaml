@@ -1,0 +1,133 @@
+# DS1120-PD VoloApp Definition
+# EMFI probe driver for Riscure DS1120A with safety controls
+#
+# This file defines the VoloApp interface for DS1120-PD.
+# Use with: python tools/generate_volo_app.py --config DS1120-PD_app.yaml
+
+name: DS1120-PD
+version: 1.0.0
+description: EMFI probe driver for Riscure DS1120A with safety controls
+author: Volo Team
+tags:
+  - emfi
+  - fault-injection
+  - probe-driver
+  - ds1120a
+  - riscure
+
+# Deployment artifacts (bitstream created after CloudCompile)
+bitstream_path: modules/DS1120-PD/latest/25ff_bitstreams.tar
+buffer_path: null  # Reserved for future use (waveform patterns, calibration data)
+
+# Application Registers (CR20-CR30)
+# Total: 11 registers for complete control
+registers:
+  # CR20: Arm the probe driver
+  - name: Armed
+    description: Arm the probe driver (one-shot operation)
+    reg_type: button
+    cr_number: 20
+    default_value: 0
+
+  # CR21: Force fire for testing
+  - name: Force Fire
+    description: Manual trigger for testing (bypasses threshold)
+    reg_type: button
+    cr_number: 21
+    default_value: 0
+
+  # CR22: Reset FSM to READY state
+  - name: Reset FSM
+    description: Reset state machine to READY state
+    reg_type: button
+    cr_number: 22
+    default_value: 0
+
+  # CR23: Timing control (dual purpose register)
+  # Bits [7:4]: Clock divider selection (0-15)
+  # Bits [3:0]: Delay counter upper nibble (12-bit delay total)
+  - name: Timing Control
+    description: Clock divider [7:4] and delay upper [3:0]
+    reg_type: counter_8bit
+    cr_number: 23
+    default_value: 0x00  # No clock division, no delay
+
+  # CR24: Delay counter lower byte
+  - name: Delay Lower
+    description: Armed timeout delay lower 8 bits (with CR23[3:0] forms 12-bit)
+    reg_type: counter_8bit
+    cr_number: 24
+    default_value: 255  # Default ~255 cycles timeout
+
+  # CR25: Firing duration
+  - name: Firing Duration
+    description: Number of cycles to remain in FIRING state (max 32)
+    reg_type: counter_8bit
+    cr_number: 25
+    default_value: 16  # Safe default firing duration
+
+  # CR26: Cooling duration
+  - name: Cooling Duration
+    description: Number of cycles to remain in COOLING state (min 8)
+    reg_type: counter_8bit
+    cr_number: 26
+    default_value: 16  # Safe default cooling period
+
+  # CR27: Trigger threshold high byte
+  - name: Trigger Thresh High
+    description: Trigger voltage threshold [15:8] (2.4V = 0x3D)
+    reg_type: counter_8bit
+    cr_number: 27
+    default_value: 0x3D  # High byte of 0x3DCF (2.4V)
+
+  # CR28: Trigger threshold low byte
+  - name: Trigger Thresh Low
+    description: Trigger voltage threshold [7:0] (2.4V = 0xCF)
+    reg_type: counter_8bit
+    cr_number: 28
+    default_value: 0xCF  # Low byte of 0x3DCF (2.4V)
+
+  # CR29: Intensity value high byte
+  - name: Intensity High
+    description: Output intensity voltage [15:8] (clamped to 3.0V max)
+    reg_type: counter_8bit
+    cr_number: 29
+    default_value: 0x26  # High byte of 0x2666 (~2.0V safe default)
+
+  # CR30: Intensity value low byte
+  - name: Intensity Low
+    description: Output intensity voltage [7:0]
+    reg_type: counter_8bit
+    cr_number: 30
+    default_value: 0x66  # Low byte of 0x2666 (~2.0V safe default)
+
+# Generated VHDL Signal Names (automatic conversion):
+#   "Armed"               -> armed                : std_logic
+#   "Force Fire"          -> force_fire           : std_logic
+#   "Reset FSM"           -> reset_fsm            : std_logic
+#   "Timing Control"      -> timing_control       : std_logic_vector(7 downto 0)
+#   "Delay Lower"         -> delay_lower          : std_logic_vector(7 downto 0)
+#   "Firing Duration"     -> firing_duration      : std_logic_vector(7 downto 0)
+#   "Cooling Duration"    -> cooling_duration     : std_logic_vector(7 downto 0)
+#   "Trigger Thresh High" -> trigger_thresh_high  : std_logic_vector(7 downto 0)
+#   "Trigger Thresh Low"  -> trigger_thresh_low   : std_logic_vector(7 downto 0)
+#   "Intensity High"      -> intensity_high        : std_logic_vector(7 downto 0)
+#   "Intensity Low"       -> intensity_low         : std_logic_vector(7 downto 0)
+
+# Usage:
+#   1. Generate VHDL shim and main template:
+#      $ python tools/generate_volo_app.py \
+#          --config modules/DS1120-PD/DS1120-PD_app.yaml \
+#          --output modules/DS1120-PD/volo_main/
+#
+#   2. Implement application logic in:
+#      modules/DS1120-PD/volo_main/DS1120_PD_volo_main.vhd
+#
+#   3. Build MCC package:
+#      $ uv run python scripts/build_mcc_package.py modules/DS1120-PD
+#
+#   4. Deploy to device (after CloudCompile):
+#      $ python tools/volo_loader.py \
+#          --config modules/DS1120-PD/DS1120-PD_app.yaml \
+#          --device <device_id> \
+#          --ip <device_ip>
