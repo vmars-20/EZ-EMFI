@@ -12,12 +12,14 @@ You are now working in the **Moku Python API/Hardware Deployment domain**.
 - `scripts/` - Build and deployment automation
 
 **Documentation:**
-- `docs/instrument_*.md` - Moku instrument API references
-- `docs/OSCILLOSCOPE_DEBUGGING_TECHNIQUES.md` - Hardware validation
+- `.serena/memories/instrument_*.md` - Moku instrument API references (AI-optimized)
+- `docs/OSCILLOSCOPE_DEBUGGING_TECHNIQUES.md` - Hardware validation workflows
 - `DS1140_PD_app.yaml` - Application descriptor
 
 **Examples:**
 - `mcc_py_api_examples/` - Reference implementations (if available)
+
+**Note:** Instrument docs in `.serena/memories/` are LLM-optimized markdown from volo_vhdl project.
 
 ---
 
@@ -67,18 +69,18 @@ mcc.set_control(8, 0x26660000)   # Intensity (16-bit, 2.0V)
 - Deploy DS1140-PD bitstream
 - 16 control registers (Control0-Control15)
 - 4 inputs, 4 outputs
-- **Reference:** `docs/instrument_cloud_compile.md`
+- **Reference:** `.serena/memories/instrument_cloud_compile.md`
 
 ### Oscilloscope
 - Monitor DS1140-PD outputs (OutputA/B/C)
 - 2 channels displayed in GUI
 - Trigger on FSM state transitions
-- **Reference:** `docs/instrument_oscilloscope.md`
+- **Reference:** `.serena/memories/instrument_oscilloscope.md`
 
 ### Arbitrary Waveform Generator
 - Generate custom trigger signals
 - Test DS1140-PD threshold detection
-- **Reference:** `docs/instrument_arbitrary_waveform_generator.md`
+- **Reference:** `.serena/memories/instrument_arbitrary_waveform_generator.md`
 
 ---
 
@@ -151,7 +153,7 @@ for i in range(10):
 
 ## Available Instrument References
 
-Check `docs/instrument_*.md` for detailed API references:
+Check `.serena/memories/instrument_*.md` for detailed API references:
 - Oscilloscope
 - Arbitrary Waveform Generator
 - Cloud Compile

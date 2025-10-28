@@ -56,7 +56,8 @@ EZ-EMFI/
 ├── models/                    # Python data models (YAML parsing)
 ├── scripts/                   # Build/deployment scripts
 ├── docs/                      # Domain-specific documentation
-└── .claude/commands/          # Context slash commands
+├── .claude/commands/          # Context slash commands
+└── .serena/memories/          # AI-optimized knowledge base (Moku APIs, lessons learned)
 ```
 
 ---
@@ -95,6 +96,27 @@ uv run python tests/run.py --all  # All test modules
 - `docs/CLAUDE_FULL_BACKUP.md` - Complete VHDL documentation (backup)
 
 **For detailed VHDL reference:** Use `/vhdl` command or read `docs/CLAUDE_FULL_BACKUP.md`
+
+**For Moku API reference:** Use `/moku` command to access `.serena/memories/instrument_*.md`
+
+---
+
+## Serena Integration
+
+**EZ-EMFI uses Serena memories** for AI-optimized knowledge storage:
+- `.serena/memories/instrument_*.md` - Moku instrument API references (16 instruments)
+- `.serena/memories/oscilloscope_debugging_techniques.md` - Hardware validation patterns
+
+**Why Serena?**
+- LLM-optimized markdown format
+- No MCP server dependency (direct file access)
+- Version controlled with git
+- Portable across projects
+- Captures incremental learning during hardware debugging
+
+**Future memories** (to be captured during deployment):
+- `ds1140_pd_deployment.md` - DS1140-PD hardware validation lessons
+- `emfi_probe_characterization.md` - EMFI probe testing results
 
 ---
 
