@@ -85,19 +85,64 @@ tests/
 ### 5. Cleanup (15 min)
 
 **Action items:**
-- [ ] Handle `outside_docs_helpme/` reference materials:
-  - Option A: Archive to `docs/reference/volo-vhdl/` (keep for future reference)
-  - Option B: Add README explaining they're reference-only, keep in place
-  - Option C: Delete after confirming all patterns are captured
-  - **Recommended:** Option A (archive) - they're valuable reference material
-- [ ] Remove unused test files (old flat tests after migration)
+
+#### Handle Reference Materials from `outside_docs_helpme/`
+
+**Status:** We already created `outside_docs_helpme/README.md` explaining their purpose.
+
+**What to do in Phase 2:**
+
+Option A (RECOMMENDED): **Archive for long-term reference**
+```bash
+mkdir -p docs/reference/volo-vhdl
+git mv outside_docs_helpme/* docs/reference/volo-vhdl/
+# Keep the directory structure so future devs can find patterns
+```
+
+Option B: **Keep in place** (already has README explaining purpose)
+```bash
+# Do nothing - README.md is already there explaining they're reference-only
+# Phase 3+ can archive them later
+```
+
+Option C: **Delete after pattern extraction** (only if confident)
+```bash
+# Verify all patterns are captured in EZ-EMFI docs first!
+git rm -r outside_docs_helpme/
+```
+
+**Decision:** Choose based on your preference. Option A is safest (keeps valuable reference material).
+
+#### Clean Up Generated/Temporary Files
+
+- [ ] Remove unused test files (old flat tests after P1/P2 migration):
+  ```bash
+  # After migrating to progressive structure:
+  git rm tests/test_volo_clk_divider.py      # Now in volo_clk_divider_tests/
+  git rm tests/test_ds1120_pd_volo.py        # Now in ds1120_pd_volo_tests/
+  # Keep test_fsm_example.py and test_verbosity_demo.py as examples
+  ```
+
 - [ ] Clean up `.gitignore`:
-  - Add `__pycache__/`
-  - Add `sim_build/`
-  - Add `*.pyc`
-  - Add `.DS_Store`
-- [ ] Remove `volo_vhdl_external_/` (it's huge and should stay external)
-- [ ] Final commit
+  ```bash
+  echo "__pycache__/" >> .gitignore
+  echo "sim_build/" >> .gitignore
+  echo "*.pyc" >> .gitignore
+  echo ".DS_Store" >> .gitignore
+  git add .gitignore
+  ```
+
+- [ ] Remove `volo_vhdl_external_/` (it's huge - should stay external):
+  ```bash
+  # Add to .gitignore so it doesn't show up as untracked
+  echo "volo_vhdl_external_/" >> .gitignore
+  ```
+
+- [ ] Final commit:
+  ```bash
+  git add .
+  git commit -m "chore: Clean up reference materials and temporary files"
+  ```
 
 ## Success Criteria
 
