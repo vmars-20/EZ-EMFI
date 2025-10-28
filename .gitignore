@@ -74,3 +74,16 @@ package-lock.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# External repositories (should be submodules or documented separately)
+EXTERNAL_volo_vhdl/
+
+# Vendor documentation (large PDFs)
+vendor_docs/
+
+# MCC examples (external reference, not our code)
+mcc-examples/
+
+# Temporary test files
+test_counter_16bit.yaml
+MCC_UPLOAD_LIST.txt
