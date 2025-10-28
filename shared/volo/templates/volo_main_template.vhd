@@ -64,13 +64,14 @@ entity {{ app_name }}_volo_main is
         bram_we   : in  std_logic;                      -- Write enable
 
         ------------------------------------------------------------------------
-        -- MCC I/O
+        -- MCC I/O (Native MCC Types)
         -- Connect to Moku platform inputs/outputs
+        -- Native types: signed(15 downto 0) for all ADC/DAC channels
         ------------------------------------------------------------------------
-        InputA  : in  std_logic_vector(31 downto 0);
-        InputB  : in  std_logic_vector(31 downto 0);
-        OutputA : out std_logic_vector(31 downto 0);
-        OutputB : out std_logic_vector(31 downto 0)
+        InputA  : in  signed(15 downto 0);
+        InputB  : in  signed(15 downto 0);
+        OutputA : out signed(15 downto 0);
+        OutputB : out signed(15 downto 0)
     );
 end entity {{ app_name }}_volo_main;
 

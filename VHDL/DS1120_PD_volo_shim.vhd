@@ -107,11 +107,12 @@ entity DS1120_PD_volo_shim is
 
         ------------------------------------------------------------------------
         -- MCC I/O (from CustomWrapper)
+        -- Native MCC types: signed(15 downto 0) for all ADC/DAC channels
         ------------------------------------------------------------------------
-        InputA      : in  std_logic_vector(31 downto 0);
-        InputB      : in  std_logic_vector(31 downto 0);
-        OutputA     : out std_logic_vector(31 downto 0);
-        OutputB     : out std_logic_vector(31 downto 0)
+        InputA      : in  signed(15 downto 0);
+        InputB      : in  signed(15 downto 0);
+        OutputA     : out signed(15 downto 0);
+        OutputB     : out signed(15 downto 0)
     );
 end entity DS1120_PD_volo_shim;
 

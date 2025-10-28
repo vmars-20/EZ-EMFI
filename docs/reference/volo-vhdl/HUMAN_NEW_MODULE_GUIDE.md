@@ -183,21 +183,21 @@ begin
     global_enable <= mcc_ready and user_enable and clk_enable;
 
     -- Instantiate core
+    -- Note: MCC provides InputA/B as signed(15 downto 0) - native ADC type
     CORE: entity WORK.myawesomemodule_core
         port map (
             clk      => Clk,
             rst_n    => not Reset,  -- Convert to active-low
             enable   => global_enable,
             clk_en   => clk_enable,
-            data_in  => InputA(15 downto 0),
-            data_out => OutputA(15 downto 0),
-            busy     => OutputB(0),
+            data_in  => std_logic_vector(InputA),  -- Type conversion if needed
+            data_out => std_logic_vector(OutputA),  -- Direct pass-through
+            busy     => OutputB(0),  -- Pack status into lower bits
             done     => OutputB(1)
         );
 
-    -- Tie unused outputs
-    OutputA(31 downto 16) <= (others => '0');
-    OutputB(31 downto 2)  <= (others => '0');
+    -- Pack unused output bits
+    OutputB(15 downto 2) <= (others => '0');
 
 end architecture;
 ```

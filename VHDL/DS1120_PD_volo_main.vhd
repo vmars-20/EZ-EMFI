@@ -60,16 +60,16 @@ entity DS1120_PD_volo_main is
         bram_we   : in  std_logic;
 
         ------------------------------------------------------------------------
-        -- MCC I/O
-        -- InputA: External trigger signal
-        -- InputB: Probe current monitor
-        -- OutputA: Trigger output to probe
-        -- OutputB: Intensity/debug output
+        -- MCC I/O (Native MCC Types)
+        -- InputA: External trigger signal (signed 16-bit ADC)
+        -- InputB: Probe current monitor (signed 16-bit ADC)
+        -- OutputA: Trigger output to probe (signed 16-bit DAC)
+        -- OutputB: Intensity/debug output (signed 16-bit DAC)
         ------------------------------------------------------------------------
-        InputA  : in  std_logic_vector(31 downto 0);
-        InputB  : in  std_logic_vector(31 downto 0);
-        OutputA : out std_logic_vector(31 downto 0);
-        OutputB : out std_logic_vector(31 downto 0)
+        InputA  : in  signed(15 downto 0);
+        InputB  : in  signed(15 downto 0);
+        OutputA : out signed(15 downto 0);
+        OutputB : out signed(15 downto 0)
     );
 end entity DS1120_PD_volo_main;
 
@@ -89,10 +89,6 @@ architecture rtl of DS1120_PD_volo_main is
     signal intensity_value   : signed(15 downto 0);
     signal intensity_clamped : signed(15 downto 0);
     signal arm_timeout      : unsigned(11 downto 0);
-
-    -- Input signals (from MCC I/O)
-    signal trigger_input    : signed(15 downto 0);
-    signal monitor_input    : signed(15 downto 0);
 
     -- Threshold trigger signals
     signal trigger_detected : std_logic;
@@ -134,10 +130,6 @@ begin
     trigger_threshold <= signed(trigger_thresh_high & trigger_thresh_low);
     intensity_value   <= signed(intensity_high & intensity_low);
 
-    -- Extract input signals from MCC I/O (16-bit signed in 32-bit containers)
-    trigger_input <= signed(InputA(15 downto 0));
-    monitor_input <= signed(InputB(15 downto 0));
-
     ----------------------------------------------------------------------------
     -- Clock Divider Instance
     -- Provides divided clock enable for FSM timing control
@@ -163,7 +155,7 @@ begin
         port map (
             clk            => Clk,
             reset          => Reset,
-            voltage_in     => trigger_input,
+            voltage_in     => InputA,  -- MCC ADC input directly
             threshold_high => trigger_threshold,
             threshold_low  => trigger_threshold - x"0100",  -- Small hysteresis
             enable         => Enable,
@@ -275,15 +267,13 @@ begin
     -- Pack outputs to MCC format
     ----------------------------------------------------------------------------
 
-    -- OutputA: Trigger output to probe (16-bit signed in 32-bit container)
-    OutputA(15 downto 0)  <= std_logic_vector(trigger_out);
-    OutputA(31 downto 16) <= (others => trigger_out(15));  -- Sign extend
+    -- OutputA: Trigger output to probe (native MCC DAC type)
+    OutputA <= trigger_out;
 
     -- OutputB: Intensity output OR debug voltage (selectable)
     -- For normal operation: intensity_out
     -- For debug: debug_voltage from FSM observer
-    OutputB(15 downto 0)  <= std_logic_vector(debug_voltage);  -- Use debug output
-    OutputB(31 downto 16) <= (others => debug_voltage(15));     -- Sign extend
+    OutputB <= debug_voltage;  -- Use debug output
 
     ----------------------------------------------------------------------------
     -- BRAM Reserved for Future Use
