@@ -4,7 +4,7 @@
 # This file defines the VoloApp interface for DS1120-PD.
 # Use with: python tools/generate_volo_app.py --config DS1120-PD_app.yaml
 
-name: DS1120-PD
+name: DS1120_PD
 version: 1.0.0
 description: EMFI probe driver for Riscure DS1120A with safety controls
 author: Volo Team
