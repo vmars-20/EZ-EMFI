@@ -4,303 +4,119 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-EZ-EMFI is an EMFI (Electromagnetic Fault Injection) probe driver for the Riscure DS1120-PD probe, designed to run on Moku hardware using VHDL. The project integrates with Liquid Instruments' Moku platform through their Multi-instrument Cloud Compile (MCC) framework.
+**EZ-EMFI** is a multi-domain project combining VHDL EMFI probe drivers with Python control tooling for the Moku platform.
 
-## Architecture
+**Domains:**
+- 🔌 **VHDL/EMFI**: Probe drivers (DS1120-PD, DS1140-PD) running on Moku FPGA
+- 🐍 **Python Tooling**: TUI apps, MCC utilities, deployment scripts
+- 🧪 **Testing**: CocotB progressive tests, hardware validation
 
-### 3-Layer VoloApp Architecture
+---
 
-The VHDL design follows a strict 3-layer architecture pattern:
+## ⚡ Quick Start: Choose Your Context
 
-**Layer 1: MCC_TOP_volo_loader.vhd** (static, shared infrastructure)
-- Not present in this repo (provided by Moku platform)
-- Handles bitstream loading and BRAM initialization
-- Provides Control Register (CR0-CR30) interface
+**This repo contains multiple subsystems.** Use slash commands to load focused context:
 
-**Layer 2: DS1120_PD_volo_shim.vhd** (generated, register mapping)
-- Location: `VHDL/DS1120_PD_volo_shim.vhd`
-- **AUTO-GENERATED - DO NOT EDIT MANUALLY**
-- Maps raw Control Registers (CR20-CR30) to application-friendly signal names
-- Combines VOLO_READY control bits into `global_enable`
-- Would typically be regenerated from a YAML config (not present in repo)
+### `/vhdl` - VHDL Development Context
+Load this when working on:
+- EMFI probe drivers (DS1120-PD, DS1140-PD)
+- VHDL packages (volo_*, ds1120_pd_*)
+- CocotB test development
+- FSM design and debugging
 
-**Layer 3: DS1120_PD_volo_main.vhd** (hand-written application logic)
-- Location: `VHDL/DS1120_PD_volo_main.vhd`
-- **THIS IS WHERE APPLICATION LOGIC LIVES**
-- MCC-agnostic interface using friendly signal names only
-- Contains the actual probe driver functionality
+**Files in scope:** `VHDL/`, `tests/`, VHDL-related docs
 
-### Core VHDL Components
+### `/python` - Python Tooling Context
+Load this when working on:
+- DS1140-PD TUI control app
+- MCC package builders
+- Deployment scripts
+- Moku API integration
 
-**State Machine Core: `ds1120_pd_fsm.vhd`**
-- 7-state FSM: READY → ARMED → FIRING → COOLING → DONE (or TIMEDOUT/HARDFAULT)
-- Safety features: fire count limiting (max 15), spurious trigger detection
-- Timing constraints: max 32 firing cycles, min 8 cooling cycles
-- All state constants defined in `ds1120_pd_pkg.vhd`
+**Files in scope:** `tools/`, `models/`, `scripts/`, `shared/`
 
-**Application Main: `DS1120_PD_volo_main.vhd`**
-- Integrates FSM core, clock divider, threshold trigger, and FSM observer
-- Implements voltage clamping for safety (max 3.0V intensity)
-- MCC I/O mapping:
-  - InputA: External trigger signal (16-bit signed)
-  - InputB: Probe current monitor (16-bit signed)
-  - OutputA: Trigger output to probe
-  - OutputB: Debug voltage from FSM observer
+### `/test` - Testing Context
+Load this when working on:
+- CocotB progressive tests (P1/P2/P3)
+- Test infrastructure
+- Hardware validation
+- Test debugging
 
-**Utility Packages**
-- `ds1120_pd_pkg.vhd`: Application-specific constants, types, and state definitions
-- `volo_common_pkg.vhd`: Shared VoloApp infrastructure (VOLO_READY scheme, BRAM interface)
-- `volo_voltage_pkg.vhd`: Voltage conversion utilities for oscilloscope visualization
+**Files in scope:** `tests/`, test-related docs
 
-**Support Components**
-- `volo_clk_divider.vhd`: Programmable clock divider for FSM timing control
-- `volo_voltage_threshold_trigger_core.vhd`: Voltage threshold crossing detection
-- `fsm_observer.vhd`: Maps FSM states to oscilloscope-visible voltages for debugging
-- `volo_bram_loader.vhd`: BRAM loading FSM (for future waveform storage)
+---
 
-### Control Register Interface
-
-The shim layer maps these Control Registers to friendly signals:
-- CR20: `armed` - Arms the probe driver
-- CR21: `force_fire` - Manual trigger (bypasses threshold)
-- CR22: `reset_fsm` - Resets state machine
-- CR23: `timing_control[7:0]` - Clock divider [7:4] + delay upper [3:0]
-- CR24: `delay_lower[7:0]` - Armed timeout (combines with CR23[3:0] for 12-bit value)
-- CR25: `firing_duration[7:0]` - Cycles in FIRING state
-- CR26: `cooling_duration[7:0]` - Cycles in COOLING state
-- CR27-28: `trigger_threshold[15:0]` - Voltage threshold (default 2.4V)
-- CR29-30: `intensity[15:0]` - Output intensity (clamped to 3.0V max)
-
-VOLO_READY control bits (CR0[31:29]):
-- Bit 31: `volo_ready` - Set by loader after deployment
-- Bit 30: `user_enable` - User-controlled enable/disable
-- Bit 29: `clk_enable` - Clock gating for sequential logic
-
-Global enable requires ALL four conditions: `volo_ready AND user_enable AND clk_enable AND loader_done`
-
-## Development Workflow
-
-### Python Environment
-
-The project uses Python (>= 3.9) with the Moku API:
-
-```bash
-# Install dependencies
-pip install moku
-
-# With development tools
-pip install 'moku[dev]'
-```
-
-Dependencies managed via `pyproject.toml` using Ruff for linting/formatting.
-
-### Linting and Formatting
-
-```bash
-# Run Ruff linter
-ruff check .
-
-# Run Ruff formatter
-ruff format .
-
-# Type checking (optional)
-mypy .
-```
-
-Ruff config in `pyproject.toml`:
-- Line length: 99
-- Target: Python 3.9+
-- Ignores E501 (line too long), E731 (lambda assignment), F841 (unused vars in examples)
-
-### VHDL Development
-
-**Important:** The shim layer (`DS1120_PD_volo_shim.vhd`) is auto-generated. When modifying register mappings:
-1. Find or create the YAML application descriptor (not currently in repo)
-2. Regenerate the shim using the generator tool (reference: line 4 of shim file)
-3. Edit application logic in `DS1120_PD_volo_main.vhd` only
-
-**Safety Constraints** (defined in `ds1120_pd_pkg.vhd`):
-- Maximum intensity: 3.0V (`MAX_INTENSITY_3V0`)
-- Maximum firing cycles: 32 (`MAX_FIRING_CYCLES`)
-- Minimum cooling cycles: 8 (`MIN_COOLING_CYCLES`)
-- Maximum arm timeout: 4095 cycles (12-bit)
-
-**Voltage Scale:** 16-bit signed with ±5V full scale (resolution: ~305µV per bit)
-
-### CocotB Testing
-
-The project uses progressive CocotB testing to preserve LLM context while maintaining comprehensive test coverage.
-
-**Progressive Test Structure:**
-- **P1 (Basic):** 2-4 essential tests, <20 lines output, runs by default
-- **P2 (Intermediate):** Full test coverage, runs when `TEST_LEVEL=P2_INTERMEDIATE`
-- **P3+ (Future):** Comprehensive/exhaustive tests
-
-**Running Tests:**
-
-```bash
-# Quick P1 validation (default)
-uv run python tests/run.py <module_name>
-
-# Full P2 validation
-TEST_LEVEL=P2_INTERMEDIATE uv run python tests/run.py <module_name>
-
-# With verbosity control
-COCOTB_VERBOSITY=NORMAL uv run python tests/run.py <module_name>
-COCOTB_VERBOSITY=VERBOSE uv run python tests/run.py <module_name>
-
-# Run all tests in a category
-uv run python tests/run.py --category volo_modules
-uv run python tests/run.py --category ds1120_pd
-
-# Run all tests
-uv run python tests/run.py --all
-```
-
-**Available Test Modules:**
-- `volo_clk_divider` - Programmable clock divider (P1/P2)
-- `volo_voltage_pkg` - Voltage conversion utilities (P1)
-- `volo_lut_pkg` - Percentage-indexed lookup tables (P1/P2)
-- `ds1120_pd_volo` - Complete DS1120-PD application (P1/P2)
-
-**Test Structure Pattern:**
-
-```
-tests/
-├── <module>_tests/
-│   ├── __init__.py
-│   └── <module>_constants.py     # Test values, error messages
-└── test_<module>_progressive.py  # Progressive test implementation
-```
-
-**Key Testing Principles:**
-1. Keep P1 tests minimal (<20 lines output)
-2. Use constants file for test values and error messages
-3. Inherit from TestBase for verbosity control
-4. Tests Layer 3 (application logic) directly with friendly signals
-5. Reference patterns: `docs/COCOTB_PATTERNS.md`, `docs/PROGRESSIVE_TESTING_GUIDE.md`
-
-**IMPORTANT - Common Pitfalls:**
-Before developing or debugging VHDL + CocotB tests, read `docs/VHDL_COCOTB_LESSONS_LEARNED.md`:
-- Function overloading with subtypes (VHDL doesn't allow it)
-- Hex literal type inference (use `x""` not `16##`)
-- Python/VHDL arithmetic rounding mismatches
-- Signal persistence between tests
-- Test wrapper design patterns
-
-**Example P1 Output:**
-```
-P1 - BASIC TESTS
-T1: Reset behavior
-  ✓ PASS
-T2: Basic operation
-  ✓ PASS
-ALL 2 TESTS PASSED
-```
-
-**GHDL Compatibility Notes:**
-- Entity names are lowercased by GHDL (use lowercase in `test_configs.py`)
-- Tests require `uv` for Python environment management
-- Simulation artifacts saved to `tests/sim_build/` (ignored by git)
-
-### Testing with Moku Hardware
-
-Examples in `moku-examples/` directory demonstrate Moku API usage. **Before running:**
-1. Edit example files to set your Moku device IP address
-2. Update any device-specific configuration (sample rates, channels, etc.)
-
-Common example patterns:
-- `*_basic.py` - Simple getting-started examples
-- `*_plotting.py` - Data visualization examples
-- `*_streaming.py` - Real-time data streaming
-- `mim_*.py` - Multi-instrument mode examples
-
-## File Organization
+## Project Structure
 
 ```
 EZ-EMFI/
-├── VHDL/                       # All VHDL source files
-│   ├── DS1120_PD_volo_main.vhd    # Application logic (Layer 3)
-│   ├── DS1120_PD_volo_shim.vhd    # Register mapping (Layer 2, GENERATED)
-│   ├── ds1120_pd_fsm.vhd          # State machine core
-│   ├── ds1120_pd_pkg.vhd          # Application constants/types
-│   ├── volo_common_pkg.vhd        # Shared VoloApp infrastructure
-│   ├── volo_voltage_pkg.vhd       # Voltage utilities
-│   ├── volo_clk_divider.vhd       # Clock divider
-│   ├── volo_voltage_threshold_trigger_core.vhd  # Threshold detection
-│   ├── fsm_observer.vhd           # Debug visualization
-│   └── volo_bram_loader.vhd       # BRAM loader FSM
-├── moku-examples/              # Moku API examples (submodule)
-├── pyproject.toml             # Python dependencies and Ruff config
-└── README.md                  # (Currently minimal)
+├── VHDL/                      # VHDL source (probe drivers, packages)
+├── tests/                     # CocotB progressive tests
+├── tools/                     # Python TUI apps and utilities
+├── models/                    # Python data models (YAML parsing)
+├── scripts/                   # Build/deployment scripts
+├── docs/                      # Domain-specific documentation
+└── .claude/commands/          # Context slash commands
 ```
 
-## Key Design Patterns
+---
 
-### Signal Naming Convention
-- Control Registers: Raw hardware interface (`app_reg_20`, `app_reg_21`, ...)
-- Friendly Signals: Application-meaningful names (`armed`, `force_fire`, `trigger_threshold`)
-- Internal Signals: Suffixed with `_int`, `_reg`, `_next` for registers/state
+## Quick Reference
 
-### Reset Strategy
-- Active-high `Reset` at top level
-- Active-low `rst_n` in FSM core (historical convention)
-- Reset forces FSM to safe state (all outputs = 0)
+**VHDL:** 3-layer VoloApp architecture (Loader → Shim → Main)
+**Testing:** Progressive CocotB (P1: fast, P2: comprehensive)
+**Python:** DS1140-PD YAML-driven TUI (framework TBD)
+**Deployment:** MCC CloudCompile → Moku hardware
 
-### Enable Hierarchy
-Priority order: `Reset > ClkEn > Enable`
-- `Reset = '1'`: Forces safe state unconditionally
-- `Enable = '0'`: Disables functional operation
-- `ClkEn = '0'`: Freezes sequential logic (clock gating)
+---
 
-### Safety Features
-- Voltage clamping on intensity output (function: `clamp_voltage` in `ds1120_pd_pkg.vhd`)
-- Automatic enforcement of timing limits (min cooling, max firing)
-- Spurious trigger counting (triggers detected when not armed)
-- Fire count limiting (prevents excessive use)
-- Fault state (STATE_HARDFAULT = "111") for error conditions
+## First Time Setup
 
-### FSM Observer Pattern
+```bash
+# Python environment (uv)
+uv sync
 
-The project uses a **production-ready FSM Observer pattern** for non-invasive FSM debugging via oscilloscope visualization.
+# Run VHDL tests
+uv run python tests/run.py volo_clk_divider
 
-**Key Features:**
-- **Fixed 6-bit interface** - Single tested entity works with all FSMs
-- **Sign-flip fault detection** - Negative voltages preserve fault context
-- **Zero overhead** - LUT calculated at elaboration time
-- **20-test validation** - Comprehensive test coverage in `examples/test_fsm_example.py`
-
-**Current Implementations:**
-- `ds1120_pd_fsm` - 7-state probe driver FSM (OutputB debug channel)
-- `volo_bram_loader` - 3-state BRAM loading FSM (voltage_debug_out port)
-
-**Integration Guide:**
-For detailed integration instructions, configuration examples, and troubleshooting, see [docs/FSM_OBSERVER_PATTERN.md](docs/FSM_OBSERVER_PATTERN.md).
-
-**Quick Integration:**
-```vhdl
--- 1. Add library dependency
-use WORK.volo_voltage_pkg.all;
-
--- 2. Pad state vector to 6-bit (if needed)
-signal state_6bit : std_logic_vector(5 downto 0);
-state_6bit <= "000" & fsm_state;  -- Pad 3-bit to 6-bit
-
--- 3. Instantiate observer
-U_OBSERVER: entity work.fsm_observer
-    generic map (
-        NUM_STATES => 8,
-        V_MIN => 0.0,
-        V_MAX => 2.5,
-        FAULT_STATE_THRESHOLD => 7,
-        STATE_0_NAME => "IDLE",
-        STATE_1_NAME => "ARMED",
-        -- ... (continue for all states)
-    )
-    port map (
-        clk          => Clk,
-        reset        => Reset,
-        state_vector => state_6bit,
-        voltage_out  => voltage_debug_out
-    );
+# Check what's available
+ls .claude/commands/        # Available contexts
+uv run python tests/run.py --all  # All test modules
 ```
+
+---
+
+## Essential Documentation
+
+**Before making changes, consult:**
+- `.claude/commands/*.md` - Domain-specific contexts (use slash commands)
+- `docs/VHDL_COCOTB_LESSONS_LEARNED.md` - Critical testing pitfalls
+- `docs/CLAUDE_FULL_BACKUP.md` - Complete VHDL documentation (backup)
+
+**For detailed VHDL reference:** Use `/vhdl` command or read `docs/CLAUDE_FULL_BACKUP.md`
+
+---
+
+## Context Switching Guide
+
+**Working on VHDL?** → Type `/vhdl` to load VHDL-specific context
+**Working on Python?** → Type `/python` to load TUI/tooling context
+**Debugging tests?** → Type `/test` to load testing infrastructure
+
+**Why?** Keeps context tight, prevents LLM confusion between VHDL and Python domains.
+
+---
+
+## Contributing
+
+When adding new features:
+1. Choose the appropriate domain context (`/vhdl`, `/python`, `/test`)
+2. Follow domain-specific guidelines (loaded by slash command)
+3. Update relevant slash command if you discover new patterns
+4. Test in the appropriate environment (GHDL, CocotB, or Python)
+
+---
+
+**Last Updated:** 2025-01-28
+**Maintainer:** vmars20
+**Full VHDL Docs:** `docs/CLAUDE_FULL_BACKUP.md` (306 lines)
