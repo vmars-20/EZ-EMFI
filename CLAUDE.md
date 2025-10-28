@@ -91,6 +91,7 @@ uv run python tests/run.py --all  # All test modules
 **Before making changes, consult:**
 - `.claude/commands/*.md` - Domain-specific contexts (use slash commands)
 - `docs/VHDL_COCOTB_LESSONS_LEARNED.md` - Critical testing pitfalls
+- `docs/OSCILLOSCOPE_DEBUGGING_TECHNIQUES.md` - Hardware validation workflows
 - `docs/CLAUDE_FULL_BACKUP.md` - Complete VHDL documentation (backup)
 
 **For detailed VHDL reference:** Use `/vhdl` command or read `docs/CLAUDE_FULL_BACKUP.md`

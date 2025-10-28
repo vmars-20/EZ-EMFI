@@ -22,6 +22,12 @@ The FSM Observer is a **non-invasive monitoring pattern** that converts binary-e
 
 > "Make the invisible visible" - Convert abstract FSM states into physical voltages that can be measured, triggering on, and analyzed with standard test equipment.
 
+### Related Documentation
+
+- **`docs/OSCILLOSCOPE_DEBUGGING_TECHNIQUES.md`** - Hardware debugging workflows using oscilloscope-based observation
+- **`docs/VHDL_COCOTB_LESSONS_LEARNED.md`** - CocotB testing best practices
+- **`.claude/commands/test.md`** - Testing context for progressive CocotB tests
+
 ---
 
 ## Pattern Architecture
