@@ -196,9 +196,46 @@ COCOTB_VERBOSITY=DEBUG uv run python run.py ds1140_pd_volo
 
 ## Compiling VHDL with GHDL
 
-### Manual Compilation (Verification)
+### Automated Compilation (Recommended)
 
-Test that all VHDL compiles before CloudCompile:
+**Use the build script** - GHDL automatically resolves dependencies:
+
+```bash
+cd /Users/vmars20/EZ-EMFI
+
+# Import all VHDL sources (builds dependency graph)
+python scripts/build_vhdl.py
+
+# Build specific entity (GHDL compiles dependencies automatically)
+python scripts/build_vhdl.py --entity ds1140_pd_volo_main
+
+# Clean build artifacts
+python scripts/build_vhdl.py --clean
+```
+
+**Features:**
+- ✅ Auto-discovers all VHDL files in project
+- ✅ GHDL resolves dependencies automatically (no manual ordering!)
+- ✅ Skips testbenches and test wrappers
+- ✅ Colored output with clear status messages
+
+**Success output:**
+```
+🔍 Finding VHDL source files...
+   Found 42 VHDL source files
+   First few files:
+     - VHDL/packages/volo_common_pkg.vhd
+     - VHDL/packages/volo_voltage_pkg.vhd
+     - VHDL/packages/ds1140_pd_pkg.vhd
+     ... and 39 more
+📦 Importing sources into GHDL work library...
+✅ Import complete - GHDL has dependency information
+✅ Dependency graph complete!
+```
+
+### Manual Compilation (Alternative)
+
+If you prefer manual control, compile in this order:
 
 ```bash
 cd /Users/vmars20/EZ-EMFI
@@ -209,9 +246,9 @@ ghdl -a --std=08 --work=WORK VHDL/packages/volo_voltage_pkg.vhd
 ghdl -a --std=08 --work=WORK VHDL/packages/ds1140_pd_pkg.vhd
 
 # 2. Compile building blocks
+ghdl -a --std=08 --work=WORK VHDL/fsm_observer.vhd
 ghdl -a --std=08 --work=WORK VHDL/volo_clk_divider.vhd
 ghdl -a --std=08 --work=WORK VHDL/volo_voltage_threshold_trigger_core.vhd
-ghdl -a --std=08 --work=WORK VHDL/fsm_observer.vhd
 ghdl -a --std=08 --work=WORK VHDL/volo_bram_loader.vhd
 
 # 3. Compile FSM core
@@ -234,7 +271,7 @@ ghdl -a --std=08 --work=WORK VHDL/Top.vhd
 VHDL/DS1140_PD_volo_main.vhd:123:45:error: no declaration for "some_signal"
 ```
 
-### Compilation Order Rules
+### Compilation Order Rules (Manual Mode Only)
 
 **CRITICAL**: VHDL packages and dependencies must compile in order:
 
@@ -251,6 +288,8 @@ VHDL/DS1140_PD_volo_main.vhd:123:45:error: no declaration for "some_signal"
 
 4. **Top level** (uses application)
    - CustomWrapper stub → Top.vhd
+
+**Note:** The automated script (`build_vhdl.py`) handles this automatically!
 
 ---
 
@@ -505,8 +544,14 @@ cd tests && TEST_LEVEL=P2_INTERMEDIATE uv run python run.py ds1140_pd_volo
 # Run with verbose output
 cd tests && COCOTB_VERBOSITY=VERBOSE uv run python run.py ds1140_pd_volo
 
-# Compile VHDL manually (verification)
+# Compile VHDL automatically (RECOMMENDED)
+python scripts/build_vhdl.py                           # Import all sources
+python scripts/build_vhdl.py --entity ds1140_pd_volo_main  # Build specific entity
+python scripts/build_vhdl.py --clean                   # Clean artifacts
+
+# Compile VHDL manually (alternative, for manual control)
 ghdl -a --std=08 --work=WORK VHDL/packages/*.vhd
+ghdl -a --std=08 --work=WORK VHDL/fsm_observer.vhd
 ghdl -a --std=08 --work=WORK VHDL/volo_*.vhd
 ghdl -a --std=08 --work=WORK VHDL/DS1140_PD_*.vhd
 ghdl -a --std=08 --work=WORK VHDL/Top.vhd
