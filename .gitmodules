@@ -1,0 +1,3 @@
+[submodule "moku-models"]
+	path = moku-models
+	url = https://github.com/sealablab/moku-models.git
