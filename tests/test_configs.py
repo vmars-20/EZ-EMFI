@@ -18,6 +18,7 @@ from typing import List
 # Project paths
 PROJECT_ROOT = Path(__file__).parent.parent
 VHDL = PROJECT_ROOT / "VHDL"
+VHDL_PKG = VHDL / "packages"
 TESTS = PROJECT_ROOT / "tests"
 
 
@@ -52,7 +53,7 @@ TESTS_CONFIG = {
     "volo_voltage_pkg": TestConfig(
         name="volo_voltage_pkg",
         sources=[
-            VHDL / "volo_voltage_pkg.vhd",
+            VHDL_PKG / "volo_voltage_pkg.vhd",
             TESTS / "volo_voltage_pkg_tb_wrapper.vhd",  # Testbench wrapper for package
         ],
         toplevel="volo_voltage_pkg_tb_wrapper",
@@ -60,11 +61,23 @@ TESTS_CONFIG = {
         category="volo_modules",
     ),
 
+    "volo_lut_pkg": TestConfig(
+        name="volo_lut_pkg",
+        sources=[
+            VHDL_PKG / "volo_voltage_pkg.vhd",          # Dependency
+            VHDL_PKG / "volo_lut_pkg.vhd",              # New LUT package
+            TESTS / "volo_lut_pkg_tb_wrapper.vhd",      # Testbench wrapper
+        ],
+        toplevel="volo_lut_pkg_tb_wrapper",
+        test_module="test_volo_lut_pkg_progressive",  # Progressive P1/P2 tests
+        category="volo_modules",
+    ),
+
     "volo_bram_loader": TestConfig(
         name="volo_bram_loader",
         sources=[
-            VHDL / "volo_voltage_pkg.vhd",
-            VHDL / "volo_common_pkg.vhd",
+            VHDL_PKG / "volo_voltage_pkg.vhd",
+            VHDL_PKG / "volo_common_pkg.vhd",
             VHDL / "fsm_observer.vhd",
             VHDL / "volo_bram_loader.vhd",
         ],
@@ -73,8 +86,10 @@ TESTS_CONFIG = {
         category="volo_modules",
     ),
 
-    # Note: These modules are tested as part of ds1120_pd_volo or standalone:
-    # Additional standalone tests can be created if needed:
+    # Note: Additional modules tested standalone:
+    # - volo_lut_pkg (new LUT infrastructure)
+    #
+    # These modules can have standalone tests created if needed:
     # - volo_voltage_threshold_trigger_core
     # - fsm_observer (tested via examples/test_fsm_example.py)
 
@@ -84,15 +99,15 @@ TESTS_CONFIG = {
         name="ds1120_pd_volo",
         sources=[
             # Shared volo modules
-            VHDL / "volo_voltage_pkg.vhd",
+            VHDL_PKG / "volo_voltage_pkg.vhd",
             VHDL / "volo_clk_divider.vhd",
             VHDL / "volo_voltage_threshold_trigger_core.vhd",
             VHDL / "fsm_observer.vhd",
-            VHDL / "volo_common_pkg.vhd",
+            VHDL_PKG / "volo_common_pkg.vhd",
             VHDL / "volo_bram_loader.vhd",
 
             # DS1120-PD specific
-            VHDL / "ds1120_pd_pkg.vhd",
+            VHDL_PKG / "ds1120_pd_pkg.vhd",
             VHDL / "ds1120_pd_fsm.vhd",
             VHDL / "DS1120_PD_volo_main.vhd",
             VHDL / "DS1120_PD_volo_shim.vhd",
@@ -107,7 +122,7 @@ TESTS_CONFIG = {
     "fsm_example": TestConfig(
         name="fsm_example",
         sources=[
-            VHDL / "volo_voltage_pkg.vhd",
+            VHDL_PKG / "volo_voltage_pkg.vhd",
             VHDL / "fsm_observer.vhd",
             # Note: fsm_example files would go here if we had them
             # For now this is a placeholder
@@ -120,7 +135,7 @@ TESTS_CONFIG = {
     "verbosity_demo": TestConfig(
         name="verbosity_demo",
         sources=[
-            VHDL / "volo_voltage_pkg.vhd",
+            VHDL_PKG / "volo_voltage_pkg.vhd",
             VHDL / "fsm_observer.vhd",
         ],
         toplevel="fsm_observer",
