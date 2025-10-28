@@ -104,8 +104,17 @@ uv run python tests/run.py --all  # All test modules
 ## Serena Integration
 
 **EZ-EMFI uses Serena memories** for AI-optimized knowledge storage:
-- `.serena/memories/instrument_*.md` - Moku instrument API references (16 instruments)
-- `.serena/memories/oscilloscope_debugging_techniques.md` - Hardware validation patterns
+
+**Instrument APIs (16 files):**
+- `instrument_oscilloscope.md`, `instrument_cloud_compile.md`, `instrument_arbitrary_waveform_generator.md`
+- `instrument_data_logger.md`, `instrument_spectrum_analyzer.md`, `instrument_waveform_generator.md`
+- Plus 10 more instrument references (see `.serena/memories/instrument_*.md`)
+
+**MCC & Hardware (4 files):**
+- `mcc_routing_concepts.md` - Slot routing and cross-slot connections
+- `riscure_ds1120a.md` - DS1120A EMFI probe hardware specifications
+- `platform_models.md` - Moku platform specs (with Control0-15 caveat)
+- `oscilloscope_debugging_techniques.md` - Hardware validation patterns
 
 **Why Serena?**
 - LLM-optimized markdown format
@@ -117,6 +126,8 @@ uv run python tests/run.py --all  # All test modules
 **Future memories** (to be captured during deployment):
 - `ds1140_pd_deployment.md` - DS1140-PD hardware validation lessons
 - `emfi_probe_characterization.md` - EMFI probe testing results
+
+**Access via:** `/moku` slash command references all Serena memories
 
 ---
 

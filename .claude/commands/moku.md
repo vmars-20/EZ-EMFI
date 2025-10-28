@@ -12,14 +12,17 @@ You are now working in the **Moku Python API/Hardware Deployment domain**.
 - `scripts/` - Build and deployment automation
 
 **Documentation:**
-- `.serena/memories/instrument_*.md` - Moku instrument API references (AI-optimized)
+- `.serena/memories/instrument_*.md` - Moku instrument API references (16 instruments)
+- `.serena/memories/mcc_routing_concepts.md` - Slot routing and connection patterns
+- `.serena/memories/riscure_ds1120a.md` - DS1120A EMFI probe hardware specs
+- `.serena/memories/platform_models.md` - Moku platform specifications
 - `docs/OSCILLOSCOPE_DEBUGGING_TECHNIQUES.md` - Hardware validation workflows
 - `DS1140_PD_app.yaml` - Application descriptor
 
 **Examples:**
 - `mcc_py_api_examples/` - Reference implementations (if available)
 
-**Note:** Instrument docs in `.serena/memories/` are LLM-optimized markdown from volo_vhdl project.
+**Note:** All `.serena/memories/` docs are LLM-optimized markdown from volo_vhdl project.
 
 ---
 
