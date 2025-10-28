@@ -50,10 +50,11 @@ volo_vhdl_external_/
 
 # Temporary development files
 DCSequencer/
-outside_docs_helpme/
+prompts/
 
 # Node.js (if any JavaScript tooling)
 node_modules/
+package.json
 package-lock.json
 
 # Build artifacts
