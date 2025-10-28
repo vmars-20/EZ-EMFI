@@ -9,6 +9,7 @@ You are now working in the **Moku Python API/Hardware Deployment domain**.
 **Python Tooling:**
 - `tools/` - TUI apps, deployment scripts
 - `models/` - YAML parsers, data models
+- `moku-models/` - Type-safe Moku configuration models (git submodule)
 - `scripts/` - Build and deployment automation
 
 **Documentation:**
@@ -43,6 +44,30 @@ from moku.instruments import MultiInstrument, CloudCompile, Oscilloscope
 m = MultiInstrument('192.168.1.100', platform_id=2)
 mcc = m.set_instrument(2, CloudCompile, bitstream="DS1140-PD.tar.gz")
 osc = m.set_instrument(1, Oscilloscope)
+```
+
+### Type-Safe Configuration (moku-models)
+```python
+from moku_models import MokuConfig, SlotConfig, MokuConnection, MOKU_GO_PLATFORM
+
+config = MokuConfig(
+    platform=MOKU_GO_PLATFORM,
+    slots={
+        1: SlotConfig(instrument='Oscilloscope'),
+        2: SlotConfig(
+            instrument='CloudCompile',
+            bitstream='DS1140-PD.tar.gz',
+            control_registers={15: 0xE0000000}  # VOLO_READY
+        )
+    },
+    routing=[
+        MokuConnection(source='Input1', destination='Slot2InA'),
+        MokuConnection(source='Slot2OutC', destination='Slot1InA')  # FSM debug
+    ]
+)
+
+# Pydantic validation ensures correctness
+errors = config.validate_routing()
 ```
 
 ### Routing Pattern (Monitor + Output)

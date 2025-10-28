@@ -9,6 +9,7 @@ You are now working in the **Python TUI and tooling domain**.
 **Python Source:**
 - `tools/` - TUI apps and command-line utilities
 - `models/` - Data models and YAML parsers
+- `moku-models/` - Type-safe Moku configuration models (git submodule)
 - `scripts/` - Build and deployment scripts
 - `shared/` - Shared Python utilities
 - `pyproject.toml` - Dependencies and project config
@@ -97,12 +98,31 @@ uv run --python 3.9 python tools/<script>.py
 ### Dependencies (pyproject.toml)
 
 **Core:**
-- Python >= 3.9
+- Python >= 3.10
 - `moku` - Moku API for hardware communication
+- `moku-models` - Type-safe Moku configuration (editable submodule)
+- `pydantic` - Data validation
 
 **Development:**
 - `ruff` - Linting and formatting
 - `mypy` - Type checking (optional)
+
+**moku-models Usage:**
+```python
+from moku_models import MokuConfig, SlotConfig, MokuConnection, MOKU_GO_PLATFORM
+
+# Type-safe configuration
+config = MokuConfig(
+    platform=MOKU_GO_PLATFORM,
+    slots={
+        1: SlotConfig(instrument='Oscilloscope'),
+        2: SlotConfig(instrument='CloudCompile', bitstream='path/to/bitstream.tar')
+    },
+    routing=[
+        MokuConnection(source='Slot2OutA', destination='Slot1InA')
+    ]
+)
+```
 
 **Linting/Formatting:**
 ```bash

@@ -23,7 +23,7 @@ See [CLAUDE.md](CLAUDE.md) for details.
 
 ### Prerequisites
 
-- Python 3.9 or later
+- Python 3.10 or later
 - `uv` for Python environment management
 - GHDL (for VHDL simulation/testing)
 - Moku device (for hardware deployment)
@@ -35,11 +35,11 @@ See [CLAUDE.md](CLAUDE.md) for details.
 git clone <repository-url>
 cd EZ-EMFI
 
-# Install Python dependencies with uv
-uv sync
+# Initialize submodules (includes moku-models)
+git submodule update --init --recursive
 
-# Install Moku API
-pip install moku
+# Install Python dependencies with uv (includes editable moku-models)
+uv sync
 ```
 
 ### Running Tests
@@ -79,6 +79,7 @@ EZ-EMFI/
 │   ├── riscure_ds1120a.md
 │   └── oscilloscope_debugging_techniques.md
 ├── .claude/commands/          # Context slash commands (/vhdl, /moku, /test)
+├── moku-models/               # Git submodule: Type-safe Moku configuration models
 ├── models/                    # Python models for code generation
 ├── tools/                     # Code generation and deployment tools
 ├── docs/                      # Documentation
