@@ -85,9 +85,18 @@ tests/
 ### 5. Cleanup (15 min)
 
 **Action items:**
-- [ ] Clean up `outside_docs_helpme/` (move to `archive/`)
-- [ ] Remove unused test files (old flat tests)
-- [ ] Clean up `.gitignore` (add `__pycache__/`, `sim_build/`)
+- [ ] Handle `outside_docs_helpme/` reference materials:
+  - Option A: Archive to `docs/reference/volo-vhdl/` (keep for future reference)
+  - Option B: Add README explaining they're reference-only, keep in place
+  - Option C: Delete after confirming all patterns are captured
+  - **Recommended:** Option A (archive) - they're valuable reference material
+- [ ] Remove unused test files (old flat tests after migration)
+- [ ] Clean up `.gitignore`:
+  - Add `__pycache__/`
+  - Add `sim_build/`
+  - Add `*.pyc`
+  - Add `.DS_Store`
+- [ ] Remove `volo_vhdl_external_/` (it's huge and should stay external)
 - [ ] Final commit
 
 ## Success Criteria

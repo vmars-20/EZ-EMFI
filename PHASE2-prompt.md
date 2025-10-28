@@ -36,9 +36,41 @@ Please read `PHASE2-TODO.md` for the full plan. High-level goals:
 
 ## Key References
 
-You have access to:
-- `volo_vhdl_external_/` - The full original project with examples
-- `outside_docs_helpme/VOLO_COCOTB_TESTING_STANDARD.md` - Testing patterns
+### Reference Materials (Adapt, Don't Copy!)
+
+**IMPORTANT:** Files in `outside_docs_helpme/` are from the large volo-vhdl project.
+They contain excellent patterns but are **structured for a 40+ module project**.
+You must **adapt** them for EZ-EMFI's simpler 6-module structure.
+
+**What's in `outside_docs_helpme/`:**
+1. ✅ **VOLO_COCOTB_TESTING_STANDARD.md** - Authoritative testing patterns
+   - Progressive test levels (P1/P2/P3/P4) ← USE THIS!
+   - Test organization structure ← SIMPLIFY for EZ-EMFI
+   - Example outputs ← Great reference
+
+2. ✅ **HUMAN_TESTING_README.md** - User-facing testing guide
+   - Test execution examples ← Adapt for EZ-EMFI paths
+   - Environment variables ← Keep these!
+   - Quick start ← Simplify (we only have 5 tests, not 40!)
+
+3. ✅ **HUMAN_NEW_MODULE_GUIDE.md** - Module creation patterns
+   - 4-layer architecture (common/datadef/core/top) ← We don't use this
+   - MCC integration patterns ← Useful for DS1120-PD
+   - Safety patterns ← Good reference
+
+4. ⚠️ **build_vhdl_deps.py** - Already copied to `scripts/build_vhdl.py`
+5. ⚠️ **ghdl_output_filter.py** - Already copied to `scripts/ghdl_output_filter.py`
+
+**How to use them:**
+- Read for **patterns and concepts**
+- Don't copy directory structures (volo-vhdl has instruments/, experimental/, etc.)
+- Adapt examples to EZ-EMFI's simpler structure
+- Reference progressive test examples (P1/P2/P3 split patterns)
+
+**Also available:**
+- `volo_vhdl_external_/` - Full project with working examples
+  - Look at `tests/ds1120_pd_volo_tests/` for progressive structure
+  - Look at `tests/counter_nbit_tests/` for simple module example
 - `README-COCOTB.md` - What we just built in Phase 1
 
 ## Starting Point
