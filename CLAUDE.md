@@ -127,6 +127,73 @@ Ruff config in `pyproject.toml`:
 
 **Voltage Scale:** 16-bit signed with ±5V full scale (resolution: ~305µV per bit)
 
+### CocotB Testing
+
+The project uses progressive CocotB testing to preserve LLM context while maintaining comprehensive test coverage.
+
+**Progressive Test Structure:**
+- **P1 (Basic):** 2-4 essential tests, <20 lines output, runs by default
+- **P2 (Intermediate):** Full test coverage, runs when `TEST_LEVEL=P2_INTERMEDIATE`
+- **P3+ (Future):** Comprehensive/exhaustive tests
+
+**Running Tests:**
+
+```bash
+# Quick P1 validation (default)
+uv run python tests/run.py <module_name>
+
+# Full P2 validation
+TEST_LEVEL=P2_INTERMEDIATE uv run python tests/run.py <module_name>
+
+# With verbosity control
+COCOTB_VERBOSITY=NORMAL uv run python tests/run.py <module_name>
+COCOTB_VERBOSITY=VERBOSE uv run python tests/run.py <module_name>
+
+# Run all tests in a category
+uv run python tests/run.py --category volo_modules
+uv run python tests/run.py --category ds1120_pd
+
+# Run all tests
+uv run python tests/run.py --all
+```
+
+**Available Test Modules:**
+- `volo_clk_divider` - Programmable clock divider (P1/P2)
+- `volo_voltage_pkg` - Voltage conversion utilities (P1)
+- `ds1120_pd_volo` - Complete DS1120-PD application (P1/P2)
+
+**Test Structure Pattern:**
+
+```
+tests/
+├── <module>_tests/
+│   ├── __init__.py
+│   └── <module>_constants.py     # Test values, error messages
+└── test_<module>_progressive.py  # Progressive test implementation
+```
+
+**Key Testing Principles:**
+1. Keep P1 tests minimal (<20 lines output)
+2. Use constants file for test values and error messages
+3. Inherit from TestBase for verbosity control
+4. Tests Layer 3 (application logic) directly with friendly signals
+5. Reference patterns: `docs/COCOTB_PATTERNS.md`, `docs/PROGRESSIVE_TESTING_GUIDE.md`
+
+**Example P1 Output:**
+```
+P1 - BASIC TESTS
+T1: Reset behavior
+  ✓ PASS
+T2: Basic operation
+  ✓ PASS
+ALL 2 TESTS PASSED
+```
+
+**GHDL Compatibility Notes:**
+- Entity names are lowercased by GHDL (use lowercase in `test_configs.py`)
+- Tests require `uv` for Python environment management
+- Simulation artifacts saved to `tests/sim_build/` (ignored by git)
+
 ### Testing with Moku Hardware
 
 Examples in `moku-examples/` directory demonstrate Moku API usage. **Before running:**

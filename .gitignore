@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# CocotB / GHDL simulation
+sim_build/
+tests/sim_build/
+*.vcd
+*.ghw
+*.cf
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Obsidian notes (personal workspace)
+.obsidian/
+
+# External reference repository (keep outside project)
+volo_vhdl_external_/
+
+# Temporary development files
+DCSequencer/
+outside_docs_helpme/
+
+# Node.js (if any JavaScript tooling)
+node_modules/
+package-lock.json
+
+# Build artifacts
+*.o
+*.a
+*.tar
+*.zip
+
+# Logs
+*.log
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
