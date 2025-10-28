@@ -2,7 +2,19 @@
 
 **Electromagnetic Fault Injection (EMFI) probe driver for the Riscure DS1120-PD probe on Moku hardware**
 
-EZ-EMFI is a VHDL-based EMFI probe driver designed to run on Liquid Instruments' Moku platform using the Multi-instrument Cloud Compile (MCC) framework. It provides precise control over electromagnetic pulses for hardware security research and fault injection experiments.
+EZ-EMFI is a multi-domain project combining VHDL EMFI probe drivers with Python control tooling for the Moku platform. It provides precise control over electromagnetic pulses for hardware security research and fault injection experiments.
+
+## 🤖 Working with AI Assistants (Claude Code)
+
+**This repo uses context-specific slash commands to keep LLM focus tight:**
+
+- **`/vhdl`** - Load VHDL/EMFI development context (probe drivers, CocotB tests)
+- **`/python`** - Load Python tooling context (TUI apps, scripts, models)
+- **`/test`** - Load testing infrastructure context (CocotB framework)
+
+**Why?** Prevents context pollution between VHDL and Python domains. Use the appropriate command when starting work in each area.
+
+See [CLAUDE.md](CLAUDE.md) for details.
 
 ## Quick Start
 
@@ -196,7 +208,15 @@ python tools/volo_loader.py \
 
 ## Documentation
 
-- **[CLAUDE.md](CLAUDE.md)** - Complete project reference for AI assistants
+**AI Assistant Context:**
+- **[CLAUDE.md](CLAUDE.md)** - Lightweight index with slash command guide
+- **[.claude/commands/vhdl.md](.claude/commands/vhdl.md)** - VHDL development context
+- **[.claude/commands/python.md](.claude/commands/python.md)** - Python tooling context
+- **[.claude/commands/test.md](.claude/commands/test.md)** - Testing infrastructure context
+- **[docs/CLAUDE_FULL_BACKUP.md](docs/CLAUDE_FULL_BACKUP.md)** - Complete VHDL reference
+
+**Technical Documentation:**
+- **[docs/VHDL_COCOTB_LESSONS_LEARNED.md](docs/VHDL_COCOTB_LESSONS_LEARNED.md)** - Critical testing pitfalls ⚠️
 - **[PHASE2_COMPLETE.md](PHASE2_COMPLETE.md)** - Phase 2 implementation summary
 - **[docs/COCOTB_PATTERNS.md](docs/COCOTB_PATTERNS.md)** - Testing patterns reference
 - **[docs/PROGRESSIVE_TESTING_GUIDE.md](docs/PROGRESSIVE_TESTING_GUIDE.md)** - Testing guide
