@@ -1,20 +1,20 @@
 --------------------------------------------------------------------------------
 -- File: MCC_TOP_volo_loader.vhd
 -- Author: Volo Team
--- Created: 2025-01-25
+-- Created: 2025-10-28
 --
 -- Description:
---   CustomWrapper architecture for VoloApp infrastructure.
+--   CustomWrapper architecture for VoloApp infrastructure (DS1140-PD).
 --   This is the static, shared top-level file for ALL volo-apps.
 --
--- Architecture: volo_loader of CustomWrapper
+-- Architecture: DS1140_PD (refactored EMFI probe driver)
 --
 -- Responsibilities:
 --   1. Extract VOLO_READY control bits from CR0[31:29]
 --   2. Instantiate volo_bram_loader FSM (CR10-CR14 protocol)
---   3. Pass app registers (CR20-CR30) to shim layer
---   4. Instantiate app-specific shim layer
---   5. Route MCC I/O (InputA/B, OutputA/B)
+--   3. Pass app registers (CR20-CR28) to shim layer
+--   4. Instantiate app-specific shim layer (DS1140_PD_volo_shim)
+--   5. Route MCC I/O (InputA/B, OutputA/B/C - THREE OUTPUTS!)
 --
 -- Register Map:
 --   CR0[31]    = volo_ready  (set by loader after deployment)
@@ -22,22 +22,23 @@
 --   CR0[29]    = clk_enable  (clock gating for sequential logic)
 --   CR0[28:0]  = Available for app-specific use
 --   CR10-CR14  = BRAM loader protocol (managed by volo_bram_loader FSM)
---   CR20-CR30  = Application registers (passed to shim)
+--   CR20-CR28  = Application registers (7 registers, passed to shim)
+--
+-- Key Changes from DS1120-PD:
+--   ✓ Architecture name: DS1140_PD (not DS1120_PD)
+--   ✓ Component name: DS1140_PD_volo_shim (not DS1120_PD_volo_shim)
+--   ✓ Three outputs: OutputA, OutputB, OutputC (DS1120-PD only used A and B)
+--   ✓ Fewer registers: CR20-CR28 (7 registers vs 11 in DS1120-PD)
 --
 -- Design Note:
 --   This file is STATIC and shared across all volo-apps.
 --   The app-specific shim is instantiated using direct instantiation.
---   For initial implementation, the app name is provided via comments/TODOs.
---   Future enhancement: Use build script to substitute app name.
---
--- Usage Pattern:
---   1. Copy this file to each app's build directory
---   2. Uncomment and customize the shim instantiation for your app
---   3. Build with MCC CloudCompile
 --
 -- References:
 --   - docs/VOLO_APP_DESIGN.md
---   - CLAUDE.md "MCC 3-Bit Control Scheme"
+--   - DS1140_PD_app.yaml
+--   - DS1140_PD_LAYER1_HANDOFF.md
+--   - DS1140_PD_THREE_OUTPUT_DESIGN.md
 --------------------------------------------------------------------------------
 
 library IEEE;
@@ -50,7 +51,7 @@ use WORK.volo_common_pkg.all;
 -- CustomWrapper entity is provided by MCC - DO NOT REDEFINE
 -- See Moku documentation for CustomWrapper interface specification
 
-architecture volo_loader of CustomWrapper is
+architecture DS1140_PD of CustomWrapper is
 
     ----------------------------------------------------------------------------
     -- VOLO_READY Control Signals (from CR0[31:29])
@@ -68,8 +69,8 @@ architecture volo_loader of CustomWrapper is
     signal loader_done    : std_logic;
 
     ----------------------------------------------------------------------------
-    -- Application Register Signals (CR20-CR30)
-    -- Only declare the ones your app uses
+    -- Application Register Signals (CR20-CR28)
+    -- DS1140-PD uses 7 registers (simplified from DS1120-PD's 11)
     ----------------------------------------------------------------------------
     signal app_reg_20     : std_logic_vector(31 downto 0);
     signal app_reg_21     : std_logic_vector(31 downto 0);
@@ -80,8 +81,6 @@ architecture volo_loader of CustomWrapper is
     signal app_reg_26     : std_logic_vector(31 downto 0);
     signal app_reg_27     : std_logic_vector(31 downto 0);
     signal app_reg_28     : std_logic_vector(31 downto 0);
-    signal app_reg_29     : std_logic_vector(31 downto 0);
-    signal app_reg_30     : std_logic_vector(31 downto 0);
 
 begin
 
@@ -96,7 +95,8 @@ begin
     clk_enable  <= Control0(CLK_ENABLE_BIT);   -- Bit 29
 
     ----------------------------------------------------------------------------
-    -- Map Application Registers (CR20-CR30)
+    -- Map Application Registers (CR20-CR28)
+    -- DS1140-PD uses 7 registers (CR20-CR28)
     ----------------------------------------------------------------------------
     app_reg_20 <= Control20;
     app_reg_21 <= Control21;
@@ -107,8 +107,6 @@ begin
     app_reg_26 <= Control26;
     app_reg_27 <= Control27;
     app_reg_28 <= Control28;
-    app_reg_29 <= Control29;
-    app_reg_30 <= Control30;
 
     ----------------------------------------------------------------------------
     -- Instantiate BRAM Loader FSM
@@ -131,9 +129,10 @@ begin
         );
 
     ----------------------------------------------------------------------------
-    -- Instantiate App-Specific Shim Layer: DS1120_PD
+    -- Instantiate App-Specific Shim Layer: DS1140_PD
+    -- CRITICAL: Three outputs (OutputA, OutputB, OutputC)
     ----------------------------------------------------------------------------
-    APP_SHIM_INST: entity WORK.DS1120_PD_volo_shim
+    APP_SHIM_INST: entity WORK.DS1140_PD_volo_shim
         port map (
             -- Clock and Reset
             Clk         => Clk,
@@ -145,7 +144,7 @@ begin
             clk_enable  => clk_enable,
             loader_done => loader_done,
 
-            -- Application Registers (CR20-CR30, 11 total)
+            -- Application Registers (CR20-CR28, 7 total)
             app_reg_20  => app_reg_20,
             app_reg_21  => app_reg_21,
             app_reg_22  => app_reg_22,
@@ -155,20 +154,24 @@ begin
             app_reg_26  => app_reg_26,
             app_reg_27  => app_reg_27,
             app_reg_28  => app_reg_28,
-            app_reg_29  => app_reg_29,
-            app_reg_30  => app_reg_30,
 
             -- BRAM Interface
             bram_addr   => bram_addr,
             bram_data   => bram_data,
             bram_we     => bram_we,
 
-            -- MCC I/O
+            -- MCC I/O (THREE OUTPUTS!)
             InputA      => InputA,
             InputB      => InputB,
-            OutputA     => OutputA,
-            OutputB     => OutputB
+            OutputA     => OutputA,  -- Trigger signal to probe
+            OutputB     => OutputB,  -- Intensity/amplitude to probe
+            OutputC     => OutputC   -- FSM state debug (NEW!)
         );
+
+    ----------------------------------------------------------------------------
+    -- OutputD Unused (tie to zero for safety)
+    ----------------------------------------------------------------------------
+    OutputD <= (others => '0');
 
     ----------------------------------------------------------------------------
     -- Future Enhancement: Dynamic App Loading
@@ -179,4 +182,4 @@ begin
     -- 3. Multi-app loader with slot selection logic
     ----------------------------------------------------------------------------
 
-end architecture volo_loader;
+end architecture DS1140_PD;
