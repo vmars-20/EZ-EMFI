@@ -86,8 +86,8 @@ TESTS_CONFIG = {
             VHDL / "DS1120_PD_volo_main.vhd",
             VHDL / "DS1120_PD_volo_shim.vhd",
         ],
-        toplevel="DS1120_PD_volo_main",
-        test_module="test_ds1120_pd_volo",
+        toplevel="ds1120_pd_volo_main",  # lowercase for GHDL
+        test_module="test_ds1120_pd_volo_progressive",  # Progressive P1/P2 tests
         category="ds1120_pd",
     ),
 
