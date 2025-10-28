@@ -138,28 +138,39 @@ class VoloApp(BaseModel):
     @staticmethod
     def get_vhdl_bit_range(reg: AppRegister) -> str:
         """
-        Get VHDL bit range for register type.
+        Get VHDL bit range for extracting signal from 32-bit Control Register.
+
+        Uses MSB-first alignment (upper bits) for cleaner bit packing:
+        - COUNTER_8BIT  → "(31 downto 24)" - Upper 8 bits
+        - COUNTER_16BIT → "(31 downto 16)" - Upper 16 bits (NEW)
+        - PERCENT       → "(31 downto 25)" - Upper 7 bits
+        - BUTTON        → "(31)"           - MSB only
+
+        Note: This returns the extraction range from app_reg_N, NOT the signal type.
 
         Examples:
-            COUNTER_8BIT → "(7 downto 0)"
-            PERCENT      → "(6 downto 0)"
-            BUTTON       → "(0)"  # Single bit, no range needed in slicing
+            COUNTER_8BIT  → "arm_timeout <= app_reg_24(31 downto 24);"
+            COUNTER_16BIT → "trigger_threshold <= app_reg_27(31 downto 16);"
+            PERCENT       → "duty_cycle <= app_reg_20(31 downto 25);"
+            BUTTON        → "armed <= app_reg_20(31);"
         """
         bit_width = reg.get_type_bit_width()
         if bit_width == 1:
-            return "(0)"
+            return "(31)"
         else:
-            return f"({bit_width - 1} downto 0)"
+            # Use upper bits: [31 downto (32 - bit_width)]
+            return f"(31 downto {32 - bit_width})"
 
     @staticmethod
     def get_vhdl_type_declaration(reg: AppRegister) -> str:
         """
-        Get VHDL type declaration for register.
+        Get VHDL type declaration for register signal.
 
         Examples:
-            COUNTER_8BIT → "std_logic_vector(7 downto 0)"
-            PERCENT      → "std_logic_vector(6 downto 0)"
-            BUTTON       → "std_logic"
+            COUNTER_8BIT  → "std_logic_vector(7 downto 0)"
+            COUNTER_16BIT → "std_logic_vector(15 downto 0)" (NEW)
+            PERCENT       → "std_logic_vector(6 downto 0)"
+            BUTTON        → "std_logic"
         """
         bit_width = reg.get_type_bit_width()
         if bit_width == 1:
