@@ -8,9 +8,12 @@ EZ-EMFI is a multi-domain project combining VHDL EMFI probe drivers with Python 
 
 **This repo uses context-specific slash commands to keep LLM focus tight:**
 
-- **`/vhdl`** - Load VHDL/EMFI development context (probe drivers, CocotB tests)
+- **`/vhdl`** - Load VHDL/EMFI development context (probe drivers, CocotB tests, FSM design)
 - **`/python`** - Load Python tooling context (TUI apps, scripts, models)
-- **`/test`** - Load testing infrastructure context (CocotB framework)
+- **`/test`** - Load testing infrastructure context (CocotB framework, progressive tests)
+- **`/moku`** - Load Moku API context (instrument APIs, hardware deployment, routing)
+
+**Knowledge Base:** `.serena/memories/` contains 20 AI-optimized reference docs (instrument APIs, hardware specs, debugging techniques).
 
 **Why?** Prevents context pollution between VHDL and Python domains. Use the appropriate command when starting work in each area.
 
@@ -70,6 +73,12 @@ EZ-EMFI/
 ├── tests/                     # Progressive CocotB tests
 │   ├── ds1120_pd_tests/      # DS1120-PD test package
 │   └── test_*.py             # Progressive test files
+├── .serena/memories/          # AI-optimized knowledge base (20 files)
+│   ├── instrument_*.md        # Moku instrument APIs
+│   ├── mcc_routing_concepts.md
+│   ├── riscure_ds1120a.md
+│   └── oscilloscope_debugging_techniques.md
+├── .claude/commands/          # Context slash commands (/vhdl, /moku, /test)
 ├── models/                    # Python models for code generation
 ├── tools/                     # Code generation and deployment tools
 ├── docs/                      # Documentation
