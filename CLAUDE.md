@@ -160,6 +160,7 @@ uv run python tests/run.py --all
 **Available Test Modules:**
 - `volo_clk_divider` - Programmable clock divider (P1/P2)
 - `volo_voltage_pkg` - Voltage conversion utilities (P1)
+- `volo_lut_pkg` - Percentage-indexed lookup tables (P1/P2)
 - `ds1120_pd_volo` - Complete DS1120-PD application (P1/P2)
 
 **Test Structure Pattern:**
@@ -178,6 +179,14 @@ tests/
 3. Inherit from TestBase for verbosity control
 4. Tests Layer 3 (application logic) directly with friendly signals
 5. Reference patterns: `docs/COCOTB_PATTERNS.md`, `docs/PROGRESSIVE_TESTING_GUIDE.md`
+
+**IMPORTANT - Common Pitfalls:**
+Before developing or debugging VHDL + CocotB tests, read `docs/VHDL_COCOTB_LESSONS_LEARNED.md`:
+- Function overloading with subtypes (VHDL doesn't allow it)
+- Hex literal type inference (use `x""` not `16##`)
+- Python/VHDL arithmetic rounding mismatches
+- Signal persistence between tests
+- Test wrapper design patterns
 
 **Example P1 Output:**
 ```
