@@ -45,7 +45,7 @@ TESTS_CONFIG = {
             VHDL / "volo_clk_divider.vhd",
         ],
         toplevel="volo_clk_divider",
-        test_module="test_volo_clk_divider",
+        test_module="test_volo_clk_divider_progressive",  # Progressive P1/P2 tests
         category="volo_modules",
     ),
 
