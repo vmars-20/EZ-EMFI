@@ -30,94 +30,95 @@ buffer_path: null  # Reserved for future use (waveform patterns, calibration dat
 num_inputs: 2   # InputA (trigger signal), InputB (current monitor)
 num_outputs: 3  # OutputA (trigger), OutputB (intensity), OutputC (FSM debug)
 
-# Application Registers (CR20-CR28)
-# Total: 7 registers (down from 11 in DS1120-PD)
+# Application Registers (Control0-Control8)
+# Total: 9 registers (MCC CustomWrapper only provides Control0-Control15)
+# NOTE: Changed from CR20-CR28 to Control0-Control8 for MCC compatibility
 # Uses counter_16bit type for cleaner voltage/timeout configuration
 registers:
   # ========================================================================
-  # Control Registers (CR20-CR22)
+  # Control Registers (Control0-Control2)
   # ========================================================================
 
-  # CR20: Arm the probe driver
+  # Control0: Arm the probe driver
   - name: Arm Probe
     description: Arm the probe driver (one-shot operation, READY→ARMED transition)
     reg_type: button
-    cr_number: 20
+    cr_number: 0
     default_value: 0
 
-  # CR21: Force fire for testing
+  # Control1: Force fire for testing
   - name: Force Fire
     description: Manual trigger for testing (bypasses threshold detection)
     reg_type: button
-    cr_number: 21
+    cr_number: 1
     default_value: 0
 
-  # CR22: Reset FSM to READY state
+  # Control2: Reset FSM to READY state
   - name: Reset FSM
     description: Reset state machine to READY state
     reg_type: button
-    cr_number: 22
+    cr_number: 2
     default_value: 0
 
   # ========================================================================
-  # Timing Registers (CR23-CR26)
+  # Timing Registers (Control3-Control6)
   # ========================================================================
 
-  # CR23: Clock divider (separate from timeout)
+  # Control3: Clock divider (separate from timeout)
   - name: Clock Divider
     description: FSM timing control divider (0=÷1, 1=÷2, ..., 15=÷16)
     reg_type: counter_8bit
-    cr_number: 23
+    cr_number: 3
     default_value: 0
     min_value: 0
     max_value: 15
 
-  # CR24: Arm timeout (NEW: single 16-bit register!)
+  # Control4: Arm timeout (NEW: single 16-bit register!)
   - name: Arm Timeout
     description: Cycles to wait for trigger before timeout (0-4095, 12-bit used)
     reg_type: counter_16bit
-    cr_number: 24
+    cr_number: 4
     default_value: 255
     min_value: 0
     max_value: 4095
 
-  # CR25: Firing duration
+  # Control5: Firing duration
   - name: Firing Duration
     description: Number of cycles to remain in FIRING state (max 32)
     reg_type: counter_8bit
-    cr_number: 25
+    cr_number: 5
     default_value: 16
     min_value: 1
     max_value: 32
 
-  # CR26: Cooling duration
+  # Control6: Cooling duration
   - name: Cooling Duration
     description: Number of cycles to remain in COOLING state (min 8)
     reg_type: counter_8bit
-    cr_number: 26
+    cr_number: 6
     default_value: 16
     min_value: 8
     max_value: 255
 
   # ========================================================================
-  # Voltage Configuration Registers (CR27-CR28)
+  # Voltage Configuration Registers (Control7-Control8)
   # NEW: Single 16-bit registers instead of high/low byte splits!
   # ========================================================================
 
-  # CR27: Trigger threshold (NEW: single 16-bit register!)
+  # Control7: Trigger threshold (NEW: single 16-bit register!)
   - name: Trigger Threshold
     description: Voltage threshold for trigger detection (16-bit signed ±5V, 2.4V = 0x3DCF)
     reg_type: counter_16bit
-    cr_number: 27
+    cr_number: 7
     default_value: 0x3DCF  # 2.4V (15823 decimal)
     min_value: 0
     max_value: 0x7FFF  # +5V max
 
-  # CR28: Intensity (NEW: single 16-bit register!)
+  # Control8: Intensity (NEW: single 16-bit register!)
   - name: Intensity
     description: Output intensity voltage (16-bit signed, hardware clamped to 3.0V = 0x4CCD)
     reg_type: counter_16bit
-    cr_number: 28
+    cr_number: 8
     default_value: 0x2666  # 2.0V safe default (9830 decimal)
     min_value: 0
     max_value: 0x7FFF  # +5V max (will be clamped to 3.0V in VHDL)
@@ -134,15 +135,19 @@ registers:
 #   "Intensity"          -> intensity           : std_logic_vector(15 downto 0)  [NEW - direct 16-bit!]
 
 # Register Bit Packing (32-bit Control Registers, MSB-first):
-#   CR20: arm_probe           -> app_reg_20(31)           [bit 31]
-#   CR21: force_fire          -> app_reg_21(31)           [bit 31]
-#   CR22: reset_fsm           -> app_reg_22(31)           [bit 31]
-#   CR23: clock_divider       -> app_reg_23(31 downto 24) [upper 8 bits]
-#   CR24: arm_timeout         -> app_reg_24(31 downto 16) [upper 16 bits] ← NEW!
-#   CR25: firing_duration     -> app_reg_25(31 downto 24) [upper 8 bits]
-#   CR26: cooling_duration    -> app_reg_26(31 downto 24) [upper 8 bits]
-#   CR27: trigger_threshold   -> app_reg_27(31 downto 16) [upper 16 bits] ← NEW!
-#   CR28: intensity           -> app_reg_28(31 downto 16) [upper 16 bits] ← NEW!
+#   Control0: arm_probe           -> app_reg_20(31)           [bit 31]
+#   Control1: force_fire          -> app_reg_21(31)           [bit 31]
+#   Control2: reset_fsm           -> app_reg_22(31)           [bit 31]
+#   Control3: clock_divider       -> app_reg_23(31 downto 24) [upper 8 bits]
+#   Control4: arm_timeout         -> app_reg_24(31 downto 16) [upper 16 bits] ← NEW!
+#   Control5: firing_duration     -> app_reg_25(31 downto 24) [upper 8 bits]
+#   Control6: cooling_duration    -> app_reg_26(31 downto 24) [upper 8 bits]
+#   Control7: trigger_threshold   -> app_reg_27(31 downto 16) [upper 16 bits] ← NEW!
+#   Control8: intensity           -> app_reg_28(31 downto 16) [upper 16 bits] ← NEW!
+#
+# Special Registers:
+#   Control10-Control14: BRAM loader protocol (managed by volo_bram_loader FSM)
+#   Control15[31:29]: VOLO_READY control bits (volo_ready, user_enable, clk_enable)
 
 # Benefits vs DS1120-PD (11 registers):
 #   ✓ 36% fewer registers (7 vs 11)

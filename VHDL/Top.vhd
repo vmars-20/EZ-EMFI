@@ -85,28 +85,29 @@ architecture DS1140_PD of CustomWrapper is
 begin
 
     ----------------------------------------------------------------------------
-    -- Extract VOLO_READY Control Bits (CR0[31:29])
+    -- Extract VOLO_READY Control Bits (Control15[31:29])
     --
     -- Safe default: All-zero state keeps module disabled (bit 31=0)
     -- The volo_loader.py script sets these bits after bitstream loading
+    -- NOTE: Moved to Control15 to avoid conflict with application registers
     ----------------------------------------------------------------------------
-    volo_ready  <= Control0(VOLO_READY_BIT);   -- Bit 31
-    user_enable <= Control0(USER_ENABLE_BIT);  -- Bit 30
-    clk_enable  <= Control0(CLK_ENABLE_BIT);   -- Bit 29
+    volo_ready  <= Control15(VOLO_READY_BIT);   -- Bit 31
+    user_enable <= Control15(USER_ENABLE_BIT);  -- Bit 30
+    clk_enable  <= Control15(CLK_ENABLE_BIT);   -- Bit 29
 
     ----------------------------------------------------------------------------
-    -- Map Application Registers (CR20-CR28)
-    -- DS1140-PD uses 7 registers (CR20-CR28)
+    -- Map Application Registers (Control0-Control8)
+    -- DS1140-PD uses 9 control registers (MCC only provides Control0-Control15)
     ----------------------------------------------------------------------------
-    app_reg_20 <= Control20;
-    app_reg_21 <= Control21;
-    app_reg_22 <= Control22;
-    app_reg_23 <= Control23;
-    app_reg_24 <= Control24;
-    app_reg_25 <= Control25;
-    app_reg_26 <= Control26;
-    app_reg_27 <= Control27;
-    app_reg_28 <= Control28;
+    app_reg_20 <= Control0;   -- Arm Probe
+    app_reg_21 <= Control1;   -- Force Fire
+    app_reg_22 <= Control2;   -- Reset FSM
+    app_reg_23 <= Control3;   -- Clock Divider
+    app_reg_24 <= Control4;   -- Arm Timeout
+    app_reg_25 <= Control5;   -- Firing Duration
+    app_reg_26 <= Control6;   -- Cooling Duration
+    app_reg_27 <= Control7;   -- Trigger Threshold
+    app_reg_28 <= Control8;   -- Intensity
 
     ----------------------------------------------------------------------------
     -- Instantiate BRAM Loader FSM
