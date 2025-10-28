@@ -250,3 +250,48 @@ Priority order: `Reset > ClkEn > Enable`
 - Spurious trigger counting (triggers detected when not armed)
 - Fire count limiting (prevents excessive use)
 - Fault state (STATE_HARDFAULT = "111") for error conditions
+
+### FSM Observer Pattern
+
+The project uses a **production-ready FSM Observer pattern** for non-invasive FSM debugging via oscilloscope visualization.
+
+**Key Features:**
+- **Fixed 6-bit interface** - Single tested entity works with all FSMs
+- **Sign-flip fault detection** - Negative voltages preserve fault context
+- **Zero overhead** - LUT calculated at elaboration time
+- **20-test validation** - Comprehensive test coverage in `examples/test_fsm_example.py`
+
+**Current Implementations:**
+- `ds1120_pd_fsm` - 7-state probe driver FSM (OutputB debug channel)
+- `volo_bram_loader` - 3-state BRAM loading FSM (voltage_debug_out port)
+
+**Integration Guide:**
+For detailed integration instructions, configuration examples, and troubleshooting, see [docs/FSM_OBSERVER_PATTERN.md](docs/FSM_OBSERVER_PATTERN.md).
+
+**Quick Integration:**
+```vhdl
+-- 1. Add library dependency
+use WORK.volo_voltage_pkg.all;
+
+-- 2. Pad state vector to 6-bit (if needed)
+signal state_6bit : std_logic_vector(5 downto 0);
+state_6bit <= "000" & fsm_state;  -- Pad 3-bit to 6-bit
+
+-- 3. Instantiate observer
+U_OBSERVER: entity work.fsm_observer
+    generic map (
+        NUM_STATES => 8,
+        V_MIN => 0.0,
+        V_MAX => 2.5,
+        FAULT_STATE_THRESHOLD => 7,
+        STATE_0_NAME => "IDLE",
+        STATE_1_NAME => "ARMED",
+        -- ... (continue for all states)
+    )
+    port map (
+        clk          => Clk,
+        reset        => Reset,
+        state_vector => state_6bit,
+        voltage_out  => voltage_debug_out
+    );
+```

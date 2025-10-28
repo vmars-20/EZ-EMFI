@@ -60,12 +60,23 @@ TESTS_CONFIG = {
         category="volo_modules",
     ),
 
-    # Note: These modules are tested as part of ds1120_pd_volo for now
-    # Can create standalone tests later if needed:
+    "volo_bram_loader": TestConfig(
+        name="volo_bram_loader",
+        sources=[
+            VHDL / "volo_voltage_pkg.vhd",
+            VHDL / "volo_common_pkg.vhd",
+            VHDL / "fsm_observer.vhd",
+            VHDL / "volo_bram_loader.vhd",
+        ],
+        toplevel="volo_bram_loader",
+        test_module="test_volo_bram_loader_progressive",  # Progressive P1/P2 tests
+        category="volo_modules",
+    ),
+
+    # Note: These modules are tested as part of ds1120_pd_volo or standalone:
+    # Additional standalone tests can be created if needed:
     # - volo_voltage_threshold_trigger_core
-    # - fsm_observer
-    # - volo_bram_loader
-    # - volo_common_pkg
+    # - fsm_observer (tested via examples/test_fsm_example.py)
 
     # === DS1120-PD Application ===
 

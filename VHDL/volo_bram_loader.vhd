@@ -42,6 +42,7 @@ use IEEE.numeric_std.all;
 
 library WORK;
 use WORK.volo_common_pkg.all;
+use WORK.volo_voltage_pkg.all;
 
 entity volo_bram_loader is
     port (
@@ -62,7 +63,10 @@ entity volo_bram_loader is
         bram_we   : out std_logic;                      -- Write enable
 
         -- Status
-        done      : out std_logic  -- Asserted when loading complete
+        done      : out std_logic;  -- Asserted when loading complete
+
+        -- Debug Output (FSM Observer)
+        voltage_debug_out : out signed(15 downto 0)  -- Oscilloscope debug voltage
     );
 end entity volo_bram_loader;
 
@@ -88,6 +92,9 @@ architecture rtl of volo_bram_loader is
 
     -- Done flag (sticky until reset)
     signal done_internal : std_logic;
+
+    -- FSM Observer signals
+    signal state_6bit : std_logic_vector(5 downto 0);
 
 begin
 
@@ -197,5 +204,31 @@ begin
 
     -- Done signal (sticky)
     done <= done_internal;
+
+    ----------------------------------------------------------------------------
+    -- FSM Observer for Debug Visualization
+    -- Maps 2-bit BRAM loader FSM state to oscilloscope-visible voltage
+    ----------------------------------------------------------------------------
+
+    -- Pad 2-bit state to 6-bit for observer
+    state_6bit <= "0000" & state;
+
+    U_BRAM_OBSERVER: entity work.fsm_observer
+        generic map (
+            NUM_STATES => 4,              -- 2-bit encoding (4 possible states)
+            V_MIN => 0.0,                 -- IDLE state voltage
+            V_MAX => 2.0,                 -- DONE state voltage
+            FAULT_STATE_THRESHOLD => 3,   -- State "11" (reserved) as fault indicator
+            STATE_0_NAME => "IDLE",
+            STATE_1_NAME => "LOADING",
+            STATE_2_NAME => "DONE",
+            STATE_3_NAME => "RESERVED"
+        )
+        port map (
+            clk          => Clk,
+            reset        => Reset,
+            state_vector => state_6bit,
+            voltage_out  => voltage_debug_out
+        );
 
 end architecture rtl;
