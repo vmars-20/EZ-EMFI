@@ -69,9 +69,13 @@ entity {{ app_name }}_volo_main is
         -- Native types: signed(15 downto 0) for all ADC/DAC channels
         ------------------------------------------------------------------------
         InputA  : in  signed(15 downto 0);
-        InputB  : in  signed(15 downto 0);
+        InputB  : in  signed(15 downto 0){% if num_inputs >= 3 %};
+        InputC  : in  signed(15 downto 0){% endif %}{% if num_inputs >= 4 %};
+        InputD  : in  signed(15 downto 0){% endif %};
         OutputA : out signed(15 downto 0);
-        OutputB : out signed(15 downto 0)
+        OutputB : out signed(15 downto 0){% if num_outputs >= 3 %};
+        OutputC : out signed(15 downto 0){% endif %}{% if num_outputs >= 4 %};
+        OutputD : out signed(15 downto 0){% endif %}
     );
 end entity {{ app_name }}_volo_main;
 
@@ -107,7 +111,9 @@ begin
     --     if Reset = '1' then
     --         -- Reset: All outputs to safe defaults
     --         OutputA <= (others => '0');
-    --         OutputB <= (others => '0');
+    --         OutputB <= (others => '0');{% if num_outputs >= 3 %}
+    --         OutputC <= (others => '0');{% endif %}{% if num_outputs >= 4 %}
+    --         OutputD <= (others => '0');{% endif %}
     --         -- Reset internal state
     --
     --     elsif rising_edge(Clk) then
@@ -122,7 +128,9 @@ begin
     --             else
     --                 -- Idle: Hold state, outputs parked
     --                 OutputA <= (others => '0');
-    --                 OutputB <= (others => '0');
+    --                 OutputB <= (others => '0');{% if num_outputs >= 3 %}
+    --                 OutputC <= (others => '0');{% endif %}{% if num_outputs >= 4 %}
+    --                 OutputD <= (others => '0');{% endif %}
     --             end if;
     --         end if;
     --         -- ClkEn='0': Hold state (no updates)
@@ -133,6 +141,9 @@ begin
     -- Placeholder: Remove when implementing
     OutputA <= (others => '0');
     OutputB <= (others => '0');
+{% if num_outputs >= 3 %}    OutputC <= (others => '0');
+{% endif %}{% if num_outputs >= 4 %}    OutputD <= (others => '0');
+{% endif %}
 
     ----------------------------------------------------------------------------
     -- Optional: BRAM Instantiation

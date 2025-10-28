@@ -1,0 +1,186 @@
+# DS1140-PD VoloApp Definition
+# Refactored EMFI probe driver for Riscure DS1120A with modern architecture
+#
+# This is a REFACTORING of DS1120-PD with:
+# - Same functionality (single-shot EMFI pulse generation)
+# - Modern register types (counter_16bit eliminates high/low byte splits)
+# - Simplified register layout (7 registers vs 11 in DS1120-PD)
+# - Three-output design (trigger, intensity, FSM debug)
+# - Preserved safety features (3.0V intensity limit, thermal management)
+#
+# Use with: python tools/generate_volo_app.py --config DS1140_PD_app.yaml
+
+name: DS1140_PD
+version: 1.0.0
+description: Refactored EMFI probe driver for Riscure DS1120A (modern architecture)
+author: Volo Team
+tags:
+  - emfi
+  - fault-injection
+  - probe-driver
+  - ds1120a
+  - riscure
+  - refactored
+
+# Deployment artifacts (bitstream created after CloudCompile)
+bitstream_path: modules/DS1140-PD/latest/25ff_bitstreams.tar
+buffer_path: null  # Reserved for future use (waveform patterns, calibration data)
+
+# MCC I/O Configuration
+num_inputs: 2   # InputA (trigger signal), InputB (current monitor)
+num_outputs: 3  # OutputA (trigger), OutputB (intensity), OutputC (FSM debug)
+
+# Application Registers (CR20-CR28)
+# Total: 7 registers (down from 11 in DS1120-PD)
+# Uses counter_16bit type for cleaner voltage/timeout configuration
+registers:
+  # ========================================================================
+  # Control Registers (CR20-CR22)
+  # ========================================================================
+
+  # CR20: Arm the probe driver
+  - name: Arm Probe
+    description: Arm the probe driver (one-shot operation, READY→ARMED transition)
+    reg_type: button
+    cr_number: 20
+    default_value: 0
+
+  # CR21: Force fire for testing
+  - name: Force Fire
+    description: Manual trigger for testing (bypasses threshold detection)
+    reg_type: button
+    cr_number: 21
+    default_value: 0
+
+  # CR22: Reset FSM to READY state
+  - name: Reset FSM
+    description: Reset state machine to READY state
+    reg_type: button
+    cr_number: 22
+    default_value: 0
+
+  # ========================================================================
+  # Timing Registers (CR23-CR26)
+  # ========================================================================
+
+  # CR23: Clock divider (separate from timeout)
+  - name: Clock Divider
+    description: FSM timing control divider (0=÷1, 1=÷2, ..., 15=÷16)
+    reg_type: counter_8bit
+    cr_number: 23
+    default_value: 0
+    min_value: 0
+    max_value: 15
+
+  # CR24: Arm timeout (NEW: single 16-bit register!)
+  - name: Arm Timeout
+    description: Cycles to wait for trigger before timeout (0-4095, 12-bit used)
+    reg_type: counter_16bit
+    cr_number: 24
+    default_value: 255
+    min_value: 0
+    max_value: 4095
+
+  # CR25: Firing duration
+  - name: Firing Duration
+    description: Number of cycles to remain in FIRING state (max 32)
+    reg_type: counter_8bit
+    cr_number: 25
+    default_value: 16
+    min_value: 1
+    max_value: 32
+
+  # CR26: Cooling duration
+  - name: Cooling Duration
+    description: Number of cycles to remain in COOLING state (min 8)
+    reg_type: counter_8bit
+    cr_number: 26
+    default_value: 16
+    min_value: 8
+    max_value: 255
+
+  # ========================================================================
+  # Voltage Configuration Registers (CR27-CR28)
+  # NEW: Single 16-bit registers instead of high/low byte splits!
+  # ========================================================================
+
+  # CR27: Trigger threshold (NEW: single 16-bit register!)
+  - name: Trigger Threshold
+    description: Voltage threshold for trigger detection (16-bit signed ±5V, 2.4V = 0x3DCF)
+    reg_type: counter_16bit
+    cr_number: 27
+    default_value: 0x3DCF  # 2.4V (15823 decimal)
+    min_value: 0
+    max_value: 0x7FFF  # +5V max
+
+  # CR28: Intensity (NEW: single 16-bit register!)
+  - name: Intensity
+    description: Output intensity voltage (16-bit signed, hardware clamped to 3.0V = 0x4CCD)
+    reg_type: counter_16bit
+    cr_number: 28
+    default_value: 0x2666  # 2.0V safe default (9830 decimal)
+    min_value: 0
+    max_value: 0x7FFF  # +5V max (will be clamped to 3.0V in VHDL)
+
+# Generated VHDL Signal Names (automatic conversion):
+#   "Arm Probe"          -> arm_probe           : std_logic
+#   "Force Fire"         -> force_fire          : std_logic
+#   "Reset FSM"          -> reset_fsm           : std_logic
+#   "Clock Divider"      -> clock_divider       : std_logic_vector(7 downto 0)
+#   "Arm Timeout"        -> arm_timeout         : std_logic_vector(15 downto 0)  [NEW - direct 16-bit!]
+#   "Firing Duration"    -> firing_duration     : std_logic_vector(7 downto 0)
+#   "Cooling Duration"   -> cooling_duration    : std_logic_vector(7 downto 0)
+#   "Trigger Threshold"  -> trigger_threshold   : std_logic_vector(15 downto 0)  [NEW - direct 16-bit!]
+#   "Intensity"          -> intensity           : std_logic_vector(15 downto 0)  [NEW - direct 16-bit!]
+
+# Register Bit Packing (32-bit Control Registers, MSB-first):
+#   CR20: arm_probe           -> app_reg_20(31)           [bit 31]
+#   CR21: force_fire          -> app_reg_21(31)           [bit 31]
+#   CR22: reset_fsm           -> app_reg_22(31)           [bit 31]
+#   CR23: clock_divider       -> app_reg_23(31 downto 24) [upper 8 bits]
+#   CR24: arm_timeout         -> app_reg_24(31 downto 16) [upper 16 bits] ← NEW!
+#   CR25: firing_duration     -> app_reg_25(31 downto 24) [upper 8 bits]
+#   CR26: cooling_duration    -> app_reg_26(31 downto 24) [upper 8 bits]
+#   CR27: trigger_threshold   -> app_reg_27(31 downto 16) [upper 16 bits] ← NEW!
+#   CR28: intensity           -> app_reg_28(31 downto 16) [upper 16 bits] ← NEW!
+
+# Benefits vs DS1120-PD (11 registers):
+#   ✓ 36% fewer registers (7 vs 11)
+#   ✓ No manual high/low byte splits in VHDL
+#   ✓ Cleaner signal reconstruction (direct 16-bit assignment)
+#   ✓ More intuitive configuration (single register for voltage values)
+#   ✓ Better documentation (voltage values in hex, not split bytes)
+#   ✓ Same functionality, simpler implementation
+
+# Voltage Scale Reference (16-bit signed ±5V):
+#   0x0000 =     0 =  0.000V
+#   0x2666 =  9830 =  1.500V (approx)
+#   0x3DCF = 15823 =  2.415V (2.4V nominal)
+#   0x4CCD = 19661 =  3.000V (MAX_INTENSITY safety limit)
+#   0x7FFF = 32767 =  5.000V (full scale)
+#
+#   Conversion: voltage = (raw_value / 32767.0) * 5.0
+
+# Usage:
+#   1. Generate VHDL shim and main template:
+#      $ python tools/generate_volo_app.py \
+#          --config DS1140_PD_app.yaml \
+#          --output VHDL/
+#
+#   2. Implement application logic in:
+#      VHDL/DS1140_PD_volo_main.vhd
+#
+#   3. Build MCC package:
+#      $ uv run python scripts/build_mcc_package.py modules/DS1140-PD
+#
+#   4. Deploy to device (after CloudCompile):
+#      $ python tools/volo_loader.py \
+#          --config DS1140_PD_app.yaml \
+#          --device <device_id> \
+#          --ip <device_ip>
+
+# Reference Implementation:
+#   - DS1120_PD_app.yaml: Original 11-register design
+#   - DS1140_PD_REQUIREMENTS.md: Complete requirements
+#   - DS1140_PD_THREE_OUTPUT_DESIGN.md: Three-output architecture
+#   - DS1140_PD_IMPLEMENTATION_GUIDE.md: Step-by-step implementation

@@ -1,0 +1,46 @@
+name: TEST_COUNTER_16BIT
+version: 0.1.0
+description: Test application for counter_16bit register type
+author: Volo Team
+tags:
+  - test
+
+bitstream_path: /tmp/test_bitstream.tar
+buffer_path: /tmp/test_buffer.bin
+
+registers:
+  # Test 16-bit register (arm timeout)
+  - name: Arm Timeout
+    description: Cycles to wait for trigger before timeout (0-4095)
+    reg_type: counter_16bit
+    cr_number: 24
+    default_value: 255
+    min_value: 0
+    max_value: 4095
+
+  # Test voltage register (also 16-bit)
+  - name: Trigger Threshold
+    description: Voltage threshold for trigger detection (16-bit signed)
+    reg_type: counter_16bit
+    cr_number: 27
+    default_value: 0x3DCF  # 2.4V
+
+  # Test another 16-bit register
+  - name: Intensity
+    description: Output intensity (16-bit signed, clamped to 3.0V)
+    reg_type: counter_16bit
+    cr_number: 28
+    default_value: 0x2666  # 2.0V
+
+  # Mix in some 8-bit and button registers for completeness
+  - name: Clock Divider
+    description: FSM timing control (0=÷1, 1=÷2, ..., 15=÷16)
+    reg_type: counter_8bit
+    cr_number: 23
+    default_value: 0
+
+  - name: Arm Probe
+    description: Arm the probe driver (one-shot operation)
+    reg_type: button
+    cr_number: 20
+    default_value: 0

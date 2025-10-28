@@ -6,10 +6,11 @@ This module provides a limited but validated type system for FPGA register inter
 
 Register Types (Limited by Design):
 - COUNTER_8BIT: 8-bit unsigned counter (0-255)
+- COUNTER_16BIT: 16-bit unsigned counter (0-65535)
 - PERCENT: Percentage value (0-100)
 - BUTTON: Boolean push-button (0 or 1)
 
-Design Principle: Start simple, extend later. These 3 types cover 80% of use cases.
+Design Principle: Start simple, extend later. These types cover most use cases.
 """
 
 from enum import Enum
@@ -22,11 +23,13 @@ class RegisterType(str, Enum):
     Supported register types for VoloApp interface.
 
     Each type maps to a specific VHDL signal type:
-    - COUNTER_8BIT → std_logic_vector(7 downto 0)
-    - PERCENT      → std_logic_vector(6 downto 0)  # 0-100 requires 7 bits
-    - BUTTON       → std_logic
+    - COUNTER_8BIT  → std_logic_vector(7 downto 0)
+    - COUNTER_16BIT → std_logic_vector(15 downto 0)
+    - PERCENT       → std_logic_vector(6 downto 0)  # 0-100 requires 7 bits
+    - BUTTON        → std_logic
     """
     COUNTER_8BIT = "counter_8bit"
+    COUNTER_16BIT = "counter_16bit"
     PERCENT = "percent"
     BUTTON = "button"
 
@@ -96,6 +99,9 @@ class AppRegister(BaseModel):
         if reg_type == RegisterType.COUNTER_8BIT:
             if not (0 <= v <= 255):
                 raise ValueError(f"COUNTER_8BIT default_value must be 0-255 (got {v})")
+        elif reg_type == RegisterType.COUNTER_16BIT:
+            if not (0 <= v <= 65535):
+                raise ValueError(f"COUNTER_16BIT default_value must be 0-65535 (got {v})")
         elif reg_type == RegisterType.PERCENT:
             if not (0 <= v <= 100):
                 raise ValueError(f"PERCENT default_value must be 0-100 (got {v})")
@@ -119,6 +125,9 @@ class AppRegister(BaseModel):
         if reg_type == RegisterType.COUNTER_8BIT:
             if not (0 <= v <= 255):
                 raise ValueError(f"COUNTER_8BIT min_value must be 0-255 (got {v})")
+        elif reg_type == RegisterType.COUNTER_16BIT:
+            if not (0 <= v <= 65535):
+                raise ValueError(f"COUNTER_16BIT min_value must be 0-65535 (got {v})")
         elif reg_type == RegisterType.PERCENT:
             if not (0 <= v <= 100):
                 raise ValueError(f"PERCENT min_value must be 0-100 (got {v})")
@@ -142,6 +151,9 @@ class AppRegister(BaseModel):
         if reg_type == RegisterType.COUNTER_8BIT:
             if not (0 <= v <= 255):
                 raise ValueError(f"COUNTER_8BIT max_value must be 0-255 (got {v})")
+        elif reg_type == RegisterType.COUNTER_16BIT:
+            if not (0 <= v <= 65535):
+                raise ValueError(f"COUNTER_16BIT max_value must be 0-65535 (got {v})")
         elif reg_type == RegisterType.PERCENT:
             if not (0 <= v <= 100):
                 raise ValueError(f"PERCENT max_value must be 0-100 (got {v})")
@@ -155,6 +167,8 @@ class AppRegister(BaseModel):
         """Get maximum possible value for this register type."""
         if self.reg_type == RegisterType.COUNTER_8BIT:
             return 255
+        elif self.reg_type == RegisterType.COUNTER_16BIT:
+            return 65535
         elif self.reg_type == RegisterType.PERCENT:
             return 100
         elif self.reg_type == RegisterType.BUTTON:
@@ -166,6 +180,8 @@ class AppRegister(BaseModel):
         """Get bit width for this register type."""
         if self.reg_type == RegisterType.COUNTER_8BIT:
             return 8
+        elif self.reg_type == RegisterType.COUNTER_16BIT:
+            return 16
         elif self.reg_type == RegisterType.PERCENT:
             return 7  # 0-100 requires 7 bits
         elif self.reg_type == RegisterType.BUTTON:

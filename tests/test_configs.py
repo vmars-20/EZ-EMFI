@@ -117,6 +117,27 @@ TESTS_CONFIG = {
         category="ds1120_pd",
     ),
 
+    "ds1140_pd_volo": TestConfig(
+        name="ds1140_pd_volo",
+        sources=[
+            # Shared volo modules
+            VHDL_PKG / "volo_voltage_pkg.vhd",
+            VHDL / "volo_clk_divider.vhd",
+            VHDL / "volo_voltage_threshold_trigger_core.vhd",
+            VHDL / "fsm_observer.vhd",
+            VHDL_PKG / "volo_common_pkg.vhd",
+
+            # DS1140-PD specific (refactored architecture)
+            VHDL_PKG / "ds1120_pd_pkg.vhd",  # FSM dependency (compatible constants)
+            VHDL_PKG / "ds1140_pd_pkg.vhd",  # NEW package for DS1140-PD main
+            VHDL / "ds1120_pd_fsm.vhd",  # Reused FSM core
+            VHDL / "DS1140_PD_volo_main.vhd",  # NEW main with three outputs
+        ],
+        toplevel="ds1140_pd_volo_main",  # lowercase for GHDL
+        test_module="test_ds1140_pd_progressive",  # Progressive P1/P2 tests
+        category="ds1140_pd",
+    ),
+
     # === Examples & Demos ===
 
     "fsm_example": TestConfig(
