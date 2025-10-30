@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-VoloApp Code Generator
+CustomInstApp Code Generator
 
-Generates VHDL shim and main template files from VoloApp YAML definition.
+Generates VHDL shim and main template files from CustomInstApp YAML definition.
 
 Usage:
-    python tools/generate_volo_app.py \\
+    python tools/generate_custom_inst.py \\
         --config modules/PulseStar/PulseStar_app.yaml \\
-        --output modules/PulseStar/volo_main/
+        --output modules/PulseStar/custom_inst_main/
 
 Generated Files:
-    - <AppName>_volo_shim.vhd  (ALWAYS regenerated)
-    - <AppName>_volo_main.vhd  (ONLY if doesn't exist)
+    - <AppName>_custom_inst_shim.vhd  (ALWAYS regenerated)
+    - <AppName>_custom_inst_main.vhd  (ONLY if doesn't exist)
 
 Design Pattern:
     The shim layer is 100% GENERATED from the Pydantic model.
@@ -33,20 +33,20 @@ from rich.panel import Panel
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models.volo import VoloApp
+from models.custom_inst import CustomInstApp
 
 
 def print_banner():
     """Print tool banner."""
     console = Console()
     console.print(Panel.fit(
-        "[bold cyan]VoloApp Code Generator[/bold cyan]\n"
-        "Generate VHDL shim and main template from VoloApp definition",
+        "[bold cyan]CustomInstApp Code Generator[/bold cyan]\n"
+        "Generate VHDL shim and main template from CustomInstApp definition",
         border_style="cyan"
     ))
 
 
-def print_register_table(app: VoloApp):
+def print_register_table(app: CustomInstApp):
     """Print register mapping table."""
     console = Console()
 
@@ -84,27 +84,27 @@ def print_summary(shim_path: Path, main_path: Path, main_created: bool):
         console.print(f"  [cyan]→[/cyan] {main_path} [blue](SKIPPED - already exists)[/blue]")
 
     console.print("\n[bold]Next Steps:[/bold]")
-    console.print("  1. Implement application logic in [green]<AppName>_volo_main.vhd[/green]")
+    console.print("  1. Implement application logic in [green]<AppName>_custom_inst_main.vhd[/green]")
     console.print("  2. Build MCC package: [cyan]uv run python scripts/build_mcc_package.py <module>[/cyan]")
     console.print("  3. Upload to CloudCompile and download results")
-    console.print("  4. Deploy with: [cyan]python tools/volo_loader.py --config <yaml> --device <name> --ip <ip>[/cyan]")
+    console.print("  4. Deploy with: [cyan]python tools/custom_inst_loader.py --config <yaml> --device <name> --ip <ip>[/cyan]")
 
 
-def generate_volo_app(config_path: Path, output_dir: Path, force: bool = False):
+def generate_custom_inst(config_path: Path, output_dir: Path, force: bool = False):
     """
-    Generate VoloApp VHDL files.
+    Generate CustomInstApp VHDL files.
 
     Args:
-        config_path: Path to VoloApp YAML definition
+        config_path: Path to CustomInstApp YAML definition
         output_dir: Output directory for generated files
         force: If True, overwrite existing main template
     """
     console = Console()
 
-    # Load VoloApp from YAML
-    console.print(f"\n[cyan]→[/cyan] Loading VoloApp from {config_path}")
+    # Load CustomInstApp from YAML
+    console.print(f"\n[cyan]→[/cyan] Loading CustomInstApp from {config_path}")
     try:
-        app = VoloApp.load_from_yaml(config_path)
+        app = CustomInstApp.load_from_yaml(config_path)
     except Exception as e:
         console.print(f"[red]✗ Error loading YAML:[/red] {e}")
         sys.exit(1)
@@ -123,12 +123,12 @@ def generate_volo_app(config_path: Path, output_dir: Path, force: bool = False):
 
     # Template paths
     project_root = Path(__file__).parent.parent
-    shim_template_path = project_root / "shared" / "volo" / "templates" / "volo_shim_template.vhd"
-    main_template_path = project_root / "shared" / "volo" / "templates" / "volo_main_template.vhd"
+    shim_template_path = project_root / "shared" / "volo" / "templates" / "custom_inst_shim_template.vhd"
+    main_template_path = project_root / "shared" / "volo" / "templates" / "custom_inst_main_template.vhd"
 
     # Output paths
-    shim_output_path = output_dir / f"{app.name}_volo_shim.vhd"
-    main_output_path = output_dir / f"{app.name}_volo_main.vhd"
+    shim_output_path = output_dir / f"{app.name}_custom_inst_shim.vhd"
+    main_output_path = output_dir / f"{app.name}_custom_inst_main.vhd"
 
     # Generate shim (ALWAYS)
     console.print(f"\n[cyan]→[/cyan] Generating shim layer...")
@@ -165,19 +165,19 @@ def generate_volo_app(config_path: Path, output_dir: Path, force: bool = False):
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Generate VoloApp VHDL files from YAML definition",
+        description="Generate CustomInstApp VHDL files from YAML definition",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Generate PulseStar volo-app files
-  python tools/generate_volo_app.py \\
+  python tools/generate_custom_inst.py \\
       --config modules/PulseStar/PulseStar_app.yaml \\
-      --output modules/PulseStar/volo_main/
+      --output modules/PulseStar/custom_inst_main/
 
   # Force regenerate main template (WARNING: overwrites existing)
-  python tools/generate_volo_app.py \\
+  python tools/generate_custom_inst.py \\
       --config modules/MyApp/MyApp_app.yaml \\
-      --output modules/MyApp/volo_main/ \\
+      --output modules/MyApp/custom_inst_main/ \\
       --force
 
 References:
@@ -190,14 +190,14 @@ References:
         '--config',
         type=Path,
         required=True,
-        help='Path to VoloApp YAML definition (e.g., PulseStar_app.yaml)'
+        help='Path to CustomInstApp YAML definition (e.g., PulseStar_app.yaml)'
     )
 
     parser.add_argument(
         '--output',
         type=Path,
         required=True,
-        help='Output directory for generated files (e.g., modules/PulseStar/volo_main/)'
+        help='Output directory for generated files (e.g., modules/PulseStar/custom_inst_main/)'
     )
 
     parser.add_argument(
@@ -217,7 +217,7 @@ References:
     print_banner()
 
     # Generate files
-    generate_volo_app(args.config, args.output, args.force)
+    generate_custom_inst(args.config, args.output, args.force)
 
 
 if __name__ == '__main__':

@@ -1,22 +1,22 @@
 """
-VoloApp Model - Hardware Abstraction Layer for FPGA Applications
+CustomInstApp Model - Hardware Abstraction Layer for FPGA Applications
 
-VoloApp is a hardware abstraction layer for deploying FPGA applications to Moku
+CustomInstApp is a hardware abstraction layer for deploying FPGA applications to Moku
 platform with human-friendly register interfaces.
 
-A VoloApp consists of:
-1. MCC bitstream (.tar) - Implements CustomWrapper interface
+A CustomInstApp consists of:
+1. MCC bitstream (.tar) - Implements SimpleCustomInstrument interface
 2. 4KB BRAM buffer (.bin) - Loaded via network protocol (optional)
-3. Application registers (CR20-CR30) - Human-friendly controls
+3. Application registers (CR6-CR15) - Human-friendly controls (max 10)
 
 Architecture (3 Layers):
-1. MCC_TOP_volo_loader.vhd (static, shared)
-2. <AppName>_volo_shim.vhd (generated from this model)
-3. <AppName>_volo_main.vhd (hand-written app logic)
+1. MCC_TOP_custom_inst_loader.vhd (static, shared)
+2. <AppName>_custom_inst_shim.vhd (generated from this model)
+3. <AppName>_custom_inst_main.vhd (hand-written app logic)
 
 Usage:
-    >>> app = VoloApp.load_from_yaml("PulseStar_app.yaml")
-    >>> shim_vhdl = app.generate_vhdl_shim(Path("templates/volo_shim_template.vhd"))
+    >>> app = CustomInstApp.load_from_yaml("PulseStar_app.yaml")
+    >>> shim_vhdl = app.generate_vhdl_shim(Path("templates/custom_inst_shim_template.vhd"))
     >>> app.save_to_yaml(Path("output/config.yaml"))
 """
 
@@ -31,9 +31,9 @@ from jinja2 import Environment, FileSystemLoader, Template
 from .app_register import AppRegister, RegisterType
 
 
-class VoloApp(BaseModel):
+class CustomInstApp(BaseModel):
     """
-    VoloApp application definition.
+    CustomInstApp application definition.
 
     Single source of truth for:
     - Application metadata
@@ -42,33 +42,33 @@ class VoloApp(BaseModel):
     - VHDL code generation
 
     Attributes:
-        name: Application name (e.g., "PulseStar")
+        name: Application name (e.g., "DS1140_PD")
         version: Semantic version (e.g., "1.0.0")
         description: Human-readable description
         bitstream_path: Path to MCC bitstream (.tar file)
         buffer_path: Optional path to 4KB BRAM buffer (.bin file)
-        registers: List of application registers (max 11, CR20-CR30)
+        registers: List of application registers (max 10, CR6-CR15)
         author: Optional author/team name
         tags: Optional list of tags for categorization
 
     Example:
-        >>> app = VoloApp(
-        ...     name="PulseStar",
+        >>> app = CustomInstApp(
+        ...     name="DS1140_PD",
         ...     version="1.0.0",
-        ...     description="High-precision pulse generation",
-        ...     bitstream_path=Path("modules/PulseStar/latest/25ff_bitstreams.tar"),
-        ...     buffer_path=Path("modules/PulseStar/buffers/timing_lut.bin"),
+        ...     description="EMFI probe driver",
+        ...     bitstream_path=Path("modules/DS1140_PD/latest/25ff_bitstreams.tar"),
+        ...     buffer_path=Path("modules/DS1140_PD/buffers/timing_lut.bin"),
         ...     registers=[
         ...         AppRegister(
-        ...             name="Pulse Width",
-        ...             description="Pulse duration",
-        ...             reg_type=RegisterType.COUNTER_8BIT,
-        ...             cr_number=20,
-        ...             default_value=100
+        ...             name="Arm Probe",
+        ...             description="Arm the probe",
+        ...             reg_type=RegisterType.BUTTON,
+        ...             cr_number=6,
+        ...             default_value=0
         ...         )
         ...     ],
         ...     author="Volo Team",
-        ...     tags=["pulser", "timing"]
+        ...     tags=["emfi", "probe"]
         ... )
     """
 
@@ -77,7 +77,7 @@ class VoloApp(BaseModel):
     description: str = Field(..., min_length=1, max_length=500)
     bitstream_path: Path
     buffer_path: Optional[Path] = None
-    registers: List[AppRegister] = Field(..., min_length=1, max_length=11)
+    registers: List[AppRegister] = Field(..., min_length=1, max_length=10)
     author: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     num_inputs: int = Field(default=2, ge=2, le=4, description="Number of MCC inputs (2-4, default 2)")
@@ -86,9 +86,9 @@ class VoloApp(BaseModel):
     @field_validator('registers')
     @classmethod
     def validate_max_registers(cls, v: List[AppRegister]) -> List[AppRegister]:
-        """Validate maximum 11 registers (CR20-CR30)."""
-        if len(v) > 11:
-            raise ValueError(f"Maximum 11 registers allowed (got {len(v)})")
+        """Validate maximum 10 registers (CR6-CR15)."""
+        if len(v) > 10:
+            raise ValueError(f"Maximum 10 registers allowed (got {len(v)})")
         return v
 
     @model_validator(mode='after')
@@ -113,11 +113,11 @@ class VoloApp(BaseModel):
         5. Strip leading/trailing underscores
 
         Examples:
-            >>> VoloApp.to_vhdl_signal_name("Pulse Width")
+            >>> CustomInstApp.to_vhdl_signal_name("Pulse Width")
             'pulse_width'
-            >>> VoloApp.to_vhdl_signal_name("Enable Output")
+            >>> CustomInstApp.to_vhdl_signal_name("Enable Output")
             'enable_output'
-            >>> VoloApp.to_vhdl_signal_name("PWM Duty %")
+            >>> CustomInstApp.to_vhdl_signal_name("PWM Duty %")
             'pwm_duty'
         """
         # Convert to lowercase
@@ -184,19 +184,19 @@ class VoloApp(BaseModel):
         """
         Generate VHDL shim layer from Jinja2 template.
 
-        The shim maps raw Control Registers (CR20-CR30) to friendly signal names
+        The shim maps raw Control Registers (CR6-CR15) to friendly signal names
         and instantiates the application main entity.
 
         Args:
-            template_path: Path to volo_shim_template.vhd
+            template_path: Path to custom_inst_shim_template.vhd
 
         Returns:
             Generated VHDL code as string
 
         Template Variables:
-            app_name: Application name (e.g., "PulseStar")
+            app_name: Application name (e.g., "DS1140_PD")
             registers: List of register mappings with:
-                - friendly_name: VHDL signal name (e.g., "pulse_width")
+                - friendly_name: VHDL signal name (e.g., "arm_probe")
                 - cr_number: Control Register number (e.g., 20)
                 - vhdl_type: Type declaration (e.g., "std_logic_vector(7 downto 0)")
                 - bit_range: Bit extraction range (e.g., "(7 downto 0)")

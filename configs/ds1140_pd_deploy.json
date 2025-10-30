@@ -1,0 +1,53 @@
+{
+  "platform": {
+    "name": "Moku:Go",
+    "platform_id": 2,
+    "num_slots": 2,
+    "ip_address": "192.168.13.159"
+  },
+  "slots": {
+    "1": {
+      "instrument": "Oscilloscope"
+    },
+    "2": {
+      "instrument": "CloudCompile",
+      "bitstream": "DS1140_bits.tar"
+    }
+  },
+  "routing": [
+    {
+      "source": "Slot2OutA",
+      "destination": "Slot1InA",
+      "comment": "DS1140-PD Trigger → Oscilloscope Ch1"
+    },
+    {
+      "source": "Slot2OutB",
+      "destination": "Slot1InB",
+      "comment": "DS1140-PD Intensity → Oscilloscope Ch2"
+    },
+    {
+      "source": "Slot2OutA",
+      "destination": "Output1",
+      "comment": "Oscilloscope Ch1 output → Physical Output1 (observe trigger)"
+    },
+    {
+      "source": "Slot2OutB",
+      "destination": "Output2",
+      "comment": "Oscilloscope Ch2 output → Physical Output1 (observe trigger)"
+    }
+  ],
+  "metadata": {
+    "description": "DS1140-PD with Oscilloscope Monitoring - Both channels observable on physical outputs",
+    "version": "1.0.0",
+    "signal_flow": {
+      "DS1140-PD OutputA (Trigger)": "→ Oscilloscope Ch1 → Physical Output1",
+      "DS1140-PD OutputB (Intensity)": "→ Oscilloscope Ch2 (internal only)"
+    },
+    "notes": [
+      "This routes DS1140-PD outputs through oscilloscope for monitoring",
+      "Physical Output1 shows oscilloscope Ch1 (trigger signal)",
+      "Both channels visible on Moku internal oscilloscope display",
+      "Use fire_now.py or test_ds1140_pd.py to control firing"
+    ]
+  }
+}
