@@ -1,32 +1,33 @@
 --------------------------------------------------------------------------------
--- File: volo_bram_loader.vhd
+-- File: custom_inst_bram_loader.vhd
 -- Author: Volo Team
 -- Created: 2025-01-25
+-- Updated: 2025-10-29 (CustomInstrument migration)
 --
 -- Description:
---   BRAM Loader FSM for VoloApp infrastructure.
---   Streams 4KB buffer data via Control Registers CR10-CR14.
+--   BRAM Loader FSM for CustomInstApp infrastructure.
+--   Streams 4KB buffer data via Control Registers CR1-CR5.
 --
--- Protocol (CR10-CR14):
---   Control10[0]     : Start signal (write 1 to begin loading)
---   Control10[31:16] : Word count (number of 32-bit words to load, max 1024)
---   Control11[11:0]  : Address to write (12-bit, 0-4095 bytes / 4 = 0-1023 words)
---   Control12[31:0]  : Data to write (32-bit word)
---   Control13[0]     : Write strobe (pulse high to commit write)
---   Control14        : Reserved for future use
+-- Protocol (CR1-CR5):
+--   Control1[0]      : Start signal (write 1 to begin loading)
+--   Control1[31:16]  : Word count (number of 32-bit words to load, max 1024)
+--   Control2[11:0]   : Address to write (12-bit, 0-4095 bytes / 4 = 0-1023 words)
+--   Control3[31:0]   : Data to write (32-bit word)
+--   Control4[0]      : Write strobe (pulse high to commit write)
+--   Control5         : Reserved for future use
 --
 -- Usage Pattern (Python/deployment script):
---   1. Set Control10 = (word_count << 16) | 0x0001  # Start + count
+--   1. Set Control1 = (word_count << 16) | 0x0001  # Start + count
 --   2. For each word:
---      a. Set Control11 = address
---      b. Set Control12 = data
---      c. Set Control13 = 0x0001  # Write strobe
---      d. Set Control13 = 0x0000  # Clear strobe
+--      a. Set Control2 = address
+--      b. Set Control3 = data
+--      c. Set Control4 = 0x0001  # Write strobe
+--      d. Set Control4 = 0x0000  # Clear strobe
 --   3. Wait for 'done' signal to assert
 --
 -- State Machine:
---   IDLE     → Wait for Control10[0] = 1
---   LOADING  → Monitor Control13[0] for write strobes
+--   IDLE     → Wait for Control1[0] = 1
+--   LOADING  → Monitor Control4[0] for write strobes
 --   DONE     → Assert done signal, wait for reset
 --
 -- Design Notes:
@@ -41,20 +42,20 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 library WORK;
-use WORK.volo_common_pkg.all;
+use WORK.custom_inst_common_pkg.all;
 
-entity volo_bram_loader is
+entity custom_inst_bram_loader is
     port (
         -- Clock and Reset
-        Clk       : in  std_logic;
-        Reset     : in  std_logic;  -- Active-high reset
+        Clk      : in  std_logic;
+        Reset    : in  std_logic;  -- Active-high reset
 
         -- Control Registers (from MCC)
-        Control10 : in  std_logic_vector(31 downto 0);  -- Start + word count
-        Control11 : in  std_logic_vector(31 downto 0);  -- Address
-        Control12 : in  std_logic_vector(31 downto 0);  -- Data
-        Control13 : in  std_logic_vector(31 downto 0);  -- Write strobe
-        Control14 : in  std_logic_vector(31 downto 0);  -- Reserved
+        Control1 : in  std_logic_vector(31 downto 0);  -- Start + word count
+        Control2 : in  std_logic_vector(31 downto 0);  -- Address
+        Control3 : in  std_logic_vector(31 downto 0);  -- Data
+        Control4 : in  std_logic_vector(31 downto 0);  -- Write strobe
+        Control5 : in  std_logic_vector(31 downto 0);  -- Reserved
 
         -- BRAM Interface (to application)
         bram_addr : out std_logic_vector(11 downto 0);  -- 4KB address space
@@ -64,9 +65,9 @@ entity volo_bram_loader is
         -- Status
         done      : out std_logic  -- Asserted when loading complete
     );
-end entity volo_bram_loader;
+end entity custom_inst_bram_loader;
 
-architecture rtl of volo_bram_loader is
+architecture rtl of custom_inst_bram_loader is
 
     -- FSM States (use std_logic_vector for Verilog portability)
     constant IDLE    : std_logic_vector(1 downto 0) := "00";
@@ -94,9 +95,9 @@ begin
     ----------------------------------------------------------------------------
     -- Extract control signals from Control Registers
     ----------------------------------------------------------------------------
-    start_loading <= Control10(0);
-    word_count    <= unsigned(Control10(31 downto 16));
-    write_strobe  <= Control13(0);
+    start_loading <= Control1(0);
+    word_count    <= unsigned(Control1(31 downto 16));
+    write_strobe  <= Control4(0);
 
     ----------------------------------------------------------------------------
     -- Edge detection for write strobe (rising edge)
@@ -186,11 +187,11 @@ begin
     -- Output Assignments
     ----------------------------------------------------------------------------
 
-    -- BRAM address (from Control11, lower 12 bits)
-    bram_addr <= Control11(11 downto 0);
+    -- BRAM address (from Control2, lower 12 bits)
+    bram_addr <= Control2(11 downto 0);
 
-    -- BRAM data (from Control12)
-    bram_data <= Control12;
+    -- BRAM data (from Control3)
+    bram_data <= Control3;
 
     -- BRAM write enable (pulse on write_strobe rising edge, only in LOADING state)
     bram_we <= '1' when (state = LOADING and write_strobe_edge = '1') else '0';

@@ -1,31 +1,32 @@
 --------------------------------------------------------------------------------
--- File: MCC_TOP_volo_loader.vhd
+-- File: MCC_TOP_custom_inst_loader.vhd
 -- Author: Volo Team
 -- Created: 2025-01-25
+-- Updated: 2025-10-29 (CustomInstrument migration)
 --
 -- Description:
---   CustomWrapper architecture for VoloApp infrastructure.
---   This is the static, shared top-level file for ALL volo-apps.
+--   SimpleCustomInstrument architecture for CustomInstApp infrastructure.
+--   This is the static, shared top-level file for ALL custom_inst apps.
 --
--- Architecture: volo_loader of CustomWrapper
+-- Architecture: Behavioral of SimpleCustomInstrument
 --
 -- Responsibilities:
 --   1. Extract VOLO_READY control bits from CR0[31:29]
---   2. Instantiate volo_bram_loader FSM (CR10-CR14 protocol)
---   3. Pass app registers (CR20-CR30) to shim layer
+--   2. Instantiate custom_inst_bram_loader FSM (CR1-CR5 protocol)
+--   3. Pass app registers (CR6-CR15) to shim layer
 --   4. Instantiate app-specific shim layer
---   5. Route MCC I/O (InputA/B, OutputA/B)
+--   5. Route MCC I/O (InputA/B/C, OutputA/B/C)
 --
 -- Register Map:
 --   CR0[31]    = volo_ready  (set by loader after deployment)
 --   CR0[30]    = user_enable (user-controlled enable/disable)
 --   CR0[29]    = clk_enable  (clock gating for sequential logic)
 --   CR0[28:0]  = Available for app-specific use
---   CR10-CR14  = BRAM loader protocol (managed by volo_bram_loader FSM)
---   CR20-CR30  = Application registers (passed to shim)
+--   CR1-CR5    = BRAM loader protocol (managed by custom_inst_bram_loader FSM)
+--   CR6-CR15   = Application registers (passed to shim, max 10 registers)
 --
 -- Design Note:
---   This file is STATIC and shared across all volo-apps.
+--   This file is STATIC and shared across all custom_inst apps.
 --   The app-specific shim is instantiated using direct instantiation.
 --   For initial implementation, the app name is provided via comments/TODOs.
 --   Future enhancement: Use build script to substitute app name.
@@ -36,7 +37,7 @@
 --   3. Build with MCC CloudCompile
 --
 -- References:
---   - docs/VOLO_APP_DESIGN.md
+--   - docs/CUSTOM_INSTRUMENT_MIGRATION_PLAN.md
 --   - CLAUDE.md "MCC 3-Bit Control Scheme"
 --------------------------------------------------------------------------------
 
@@ -45,12 +46,12 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 library WORK;
-use WORK.volo_common_pkg.all;
+use WORK.custom_inst_common_pkg.all;
 
--- CustomWrapper entity is provided by MCC - DO NOT REDEFINE
--- See Moku documentation for CustomWrapper interface specification
+-- SimpleCustomInstrument entity is provided by MCC - DO NOT REDEFINE
+-- See Moku documentation for SimpleCustomInstrument interface specification
 
-architecture volo_loader of CustomWrapper is
+architecture Behavioral of SimpleCustomInstrument is
 
     ----------------------------------------------------------------------------
     -- VOLO_READY Control Signals (from CR0[31:29])
@@ -68,20 +69,19 @@ architecture volo_loader of CustomWrapper is
     signal loader_done    : std_logic;
 
     ----------------------------------------------------------------------------
-    -- Application Register Signals (CR20-CR30)
-    -- Only declare the ones your app uses
+    -- Application Register Signals (CR6-CR15)
+    -- Only declare the ones your app uses (max 10 registers)
     ----------------------------------------------------------------------------
-    signal app_reg_20     : std_logic_vector(31 downto 0);
-    signal app_reg_21     : std_logic_vector(31 downto 0);
-    signal app_reg_22     : std_logic_vector(31 downto 0);
-    signal app_reg_23     : std_logic_vector(31 downto 0);
-    signal app_reg_24     : std_logic_vector(31 downto 0);
-    signal app_reg_25     : std_logic_vector(31 downto 0);
-    signal app_reg_26     : std_logic_vector(31 downto 0);
-    signal app_reg_27     : std_logic_vector(31 downto 0);
-    signal app_reg_28     : std_logic_vector(31 downto 0);
-    signal app_reg_29     : std_logic_vector(31 downto 0);
-    signal app_reg_30     : std_logic_vector(31 downto 0);
+    signal app_reg_6      : std_logic_vector(31 downto 0);
+    signal app_reg_7      : std_logic_vector(31 downto 0);
+    signal app_reg_8      : std_logic_vector(31 downto 0);
+    signal app_reg_9      : std_logic_vector(31 downto 0);
+    signal app_reg_10     : std_logic_vector(31 downto 0);
+    signal app_reg_11     : std_logic_vector(31 downto 0);
+    signal app_reg_12     : std_logic_vector(31 downto 0);
+    signal app_reg_13     : std_logic_vector(31 downto 0);
+    signal app_reg_14     : std_logic_vector(31 downto 0);
+    signal app_reg_15     : std_logic_vector(31 downto 0);
 
 begin
 
@@ -96,34 +96,33 @@ begin
     clk_enable  <= Control0(CLK_ENABLE_BIT);   -- Bit 29
 
     ----------------------------------------------------------------------------
-    -- Map Application Registers (CR20-CR30)
+    -- Map Application Registers (CR6-CR15)
     ----------------------------------------------------------------------------
-    app_reg_20 <= Control20;
-    app_reg_21 <= Control21;
-    app_reg_22 <= Control22;
-    app_reg_23 <= Control23;
-    app_reg_24 <= Control24;
-    app_reg_25 <= Control25;
-    app_reg_26 <= Control26;
-    app_reg_27 <= Control27;
-    app_reg_28 <= Control28;
-    app_reg_29 <= Control29;
-    app_reg_30 <= Control30;
+    app_reg_6  <= Control6;
+    app_reg_7  <= Control7;
+    app_reg_8  <= Control8;
+    app_reg_9  <= Control9;
+    app_reg_10 <= Control10;
+    app_reg_11 <= Control11;
+    app_reg_12 <= Control12;
+    app_reg_13 <= Control13;
+    app_reg_14 <= Control14;
+    app_reg_15 <= Control15;
 
     ----------------------------------------------------------------------------
     -- Instantiate BRAM Loader FSM
     --
-    -- Manages CR10-CR14 protocol for loading 4KB buffer
+    -- Manages CR1-CR5 protocol for loading 4KB buffer
     ----------------------------------------------------------------------------
-    BRAM_LOADER_INST: entity WORK.volo_bram_loader
+    BRAM_LOADER_INST: entity WORK.custom_inst_bram_loader
         port map (
-            Clk       => Clk,
-            Reset     => Reset,
-            Control10 => Control10,
-            Control11 => Control11,
-            Control12 => Control12,
-            Control13 => Control13,
-            Control14 => Control14,
+            Clk      => Clk,
+            Reset    => Reset,
+            Control1 => Control1,
+            Control2 => Control2,
+            Control3 => Control3,
+            Control4 => Control4,
+            Control5 => Control5,
             bram_addr => bram_addr,
             bram_data => bram_data,
             bram_we   => bram_we,
@@ -135,9 +134,9 @@ begin
     --
     -- TODO: Customize this section for your specific app
     --
-    -- Example for PulseStar:
+    -- Example for DS1140_PD:
     --
-    -- APP_SHIM_INST: entity WORK.PulseStar_volo_shim
+    -- APP_SHIM_INST: entity WORK.DS1140_PD_custom_inst_shim
     --     port map (
     --         -- Clock and Reset
     --         Clk         => Clk,
@@ -149,10 +148,10 @@ begin
     --         clk_enable  => clk_enable,
     --         loader_done => loader_done,
     --
-    --         -- Application Registers (only used ones)
-    --         app_reg_20  => app_reg_20,
-    --         app_reg_21  => app_reg_21,
-    --         app_reg_22  => app_reg_22,
+    --         -- Application Registers (only used ones, max 10)
+    --         app_reg_6   => app_reg_6,
+    --         app_reg_7   => app_reg_7,
+    --         app_reg_8   => app_reg_8,
     --
     --         -- BRAM Interface
     --         bram_addr   => bram_addr,
@@ -162,8 +161,10 @@ begin
     --         -- MCC I/O
     --         InputA      => InputA,
     --         InputB      => InputB,
+    --         InputC      => InputC,
     --         OutputA     => OutputA,
-    --         OutputB     => OutputB
+    --         OutputB     => OutputB,
+    --         OutputC     => OutputC
     --     );
     --
     ----------------------------------------------------------------------------
@@ -171,6 +172,7 @@ begin
     -- Placeholder: Remove these when app shim is instantiated
     OutputA <= InputA;  -- Pass-through for now
     OutputB <= InputB;  -- Pass-through for now
+    OutputC <= InputC;  -- Pass-through for now
 
     ----------------------------------------------------------------------------
     -- Future Enhancement: Dynamic App Loading
@@ -181,4 +183,4 @@ begin
     -- 3. Multi-app loader with slot selection logic
     ----------------------------------------------------------------------------
 
-end architecture volo_loader;
+end architecture Behavioral;

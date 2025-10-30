@@ -30,6 +30,11 @@
 --   ✓ Three outputs: OutputA, OutputB, OutputC (DS1120-PD only used A and B)
 --   ✓ Fewer registers: CR20-CR28 (7 registers vs 11 in DS1120-PD)
 --
+-- ⚠️  TEMPORARY DEBUG ROUTING (2025-10-28):
+--   OutputA = FSM state debug (for oscilloscope observation)
+--   OutputB = Trigger signal (moved from OutputA)
+--   OutputC = Intensity/amplitude (moved from OutputB)
+--
 -- Design Note:
 --   This file is STATIC and shared across all volo-apps.
 --   The app-specific shim is instantiated using direct instantiation.
@@ -162,11 +167,12 @@ begin
             bram_we     => bram_we,
 
             -- MCC I/O (THREE OUTPUTS!)
+            -- TEMPORARY DEBUG ROUTING: FSM state on OutputA for oscilloscope
             InputA      => InputA,
             InputB      => InputB,
-            OutputA     => OutputA,  -- Trigger signal to probe
-            OutputB     => OutputB,  -- Intensity/amplitude to probe
-            OutputC     => OutputC   -- FSM state debug (NEW!)
+            OutputA     => OutputC,  -- FSM state debug (SWAPPED FOR DEBUG!)
+            OutputB     => OutputA,  -- Trigger signal to probe (moved from A)
+            OutputC     => OutputB   -- Intensity/amplitude (moved from B)
         );
 
     ----------------------------------------------------------------------------

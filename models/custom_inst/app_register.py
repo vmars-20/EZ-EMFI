@@ -1,7 +1,7 @@
 """
-VoloApp Register Type System
+CustomInstApp Register Type System
 
-Defines register types and application register models for the VoloApp abstraction.
+Defines register types and application register models for the CustomInstApp abstraction.
 This module provides a limited but validated type system for FPGA register interfaces.
 
 Register Types (Limited by Design):
@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class RegisterType(str, Enum):
     """
-    Supported register types for VoloApp interface.
+    Supported register types for CustomInstApp interface.
 
     Each type maps to a specific VHDL signal type:
     - COUNTER_8BIT  → std_logic_vector(7 downto 0)
@@ -36,41 +36,41 @@ class RegisterType(str, Enum):
 
 class AppRegister(BaseModel):
     """
-    Application register definition for VoloApp interface.
+    Application register definition for CustomInstApp interface.
 
-    Defines a single control register (CR20-CR30) with human-friendly naming
+    Defines a single control register (CR6-CR15) with human-friendly naming
     and automatic validation of value ranges.
 
     Attributes:
-        name: Human-readable name (e.g., "Pulse Width")
+        name: Human-readable name (e.g., "Arm Probe")
               Converted to VHDL signal name via to_vhdl_signal_name()
         description: What this register controls
         reg_type: Register type (determines bit width and range)
-        cr_number: Control Register number (must be 20-30 inclusive)
+        cr_number: Control Register number (must be 6-15 inclusive)
         default_value: Default value on reset (optional)
         min_value: Minimum allowed value (optional, type-dependent)
         max_value: Maximum allowed value (optional, type-dependent)
 
     Example:
         >>> reg = AppRegister(
-        ...     name="Pulse Width",
-        ...     description="Pulse duration in clock cycles",
-        ...     reg_type=RegisterType.COUNTER_8BIT,
-        ...     cr_number=20,
-        ...     default_value=100,
-        ...     min_value=1,
-        ...     max_value=255
+        ...     name="Arm Probe",
+        ...     description="Arm the EMFI probe",
+        ...     reg_type=RegisterType.BUTTON,
+        ...     cr_number=6,
+        ...     default_value=0,
+        ...     min_value=0,
+        ...     max_value=1
         ... )
         >>> reg.name
-        'Pulse Width'
+        'Arm Probe'
         >>> reg.cr_number
-        20
+        6
     """
 
     name: str = Field(..., min_length=1, max_length=50)
     description: str = Field(..., min_length=1, max_length=200)
     reg_type: RegisterType
-    cr_number: int = Field(..., ge=20, le=30)
+    cr_number: int = Field(..., ge=6, le=15)
     default_value: Optional[int] = None
     min_value: Optional[int] = None
     max_value: Optional[int] = None
@@ -78,9 +78,9 @@ class AppRegister(BaseModel):
     @field_validator('cr_number')
     @classmethod
     def validate_cr_number(cls, v: int) -> int:
-        """Validate Control Register number is in application range (20-30)."""
-        if not (20 <= v <= 30):
-            raise ValueError(f"cr_number must be 20-30 (got {v})")
+        """Validate Control Register number is in application range (6-15)."""
+        if not (6 <= v <= 15):
+            raise ValueError(f"cr_number must be 6-15 (got {v})")
         return v
 
     @field_validator('default_value')

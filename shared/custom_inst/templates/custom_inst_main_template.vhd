@@ -1,16 +1,16 @@
 --------------------------------------------------------------------------------
--- File: {{ app_name }}_volo_main.vhd
+-- File: {{ app_name }}_custom_inst_main.vhd
 -- Generated: {{ timestamp }}
--- Generator: tools/generate_volo_app.py (template only)
+-- Generator: tools/generate_custom_inst.py (template only)
 --
 -- Description:
---   Application logic for {{ app_name }} VoloApp.
+--   Application logic for {{ app_name }} CustomInstApp.
 --   MCC-agnostic interface with friendly signal names.
 --
--- Layer 3 of 3-Layer VoloApp Architecture:
---   Layer 1: MCC_TOP_volo_loader.vhd (static, shared)
---   Layer 2: {{ app_name }}_volo_shim.vhd (generated, register mapping)
---   Layer 3: {{ app_name }}_volo_main.vhd (THIS FILE - hand-written logic)
+-- Layer 3 of 3-Layer CustomInstApp Architecture:
+--   Layer 1: MCC_TOP_custom_inst_loader.vhd (static, shared)
+--   Layer 2: {{ app_name }}_custom_inst_shim.vhd (generated, register mapping)
+--   Layer 3: {{ app_name }}_custom_inst_main.vhd (THIS FILE - hand-written logic)
 --
 -- Developer Notes:
 --   - This file is YOURS to edit - implement your application logic here
@@ -26,7 +26,7 @@
 {% endfor %}
 --
 -- References:
---   - docs/VOLO_APP_DESIGN.md
+--   - docs/CUSTOM_INSTRUMENT_MIGRATION_PLAN.md
 --   - {{ app_name }}_app.yaml
 --   - CLAUDE.md "Standard Control Signals"
 --------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
-entity {{ app_name }}_volo_main is
+entity {{ app_name }}_custom_inst_main is
     port (
         ------------------------------------------------------------------------
         -- Standard Control Signals
@@ -56,7 +56,7 @@ entity {{ app_name }}_volo_main is
 
         ------------------------------------------------------------------------
         -- BRAM Interface (Always Exposed)
-        -- 4KB buffer loaded via volo_loader.py during deployment
+        -- 4KB buffer loaded via custom_inst_loader.py during deployment
         -- Ignore if your application doesn't need BRAM
         ------------------------------------------------------------------------
         bram_addr : in  std_logic_vector(11 downto 0);  -- Address (word-aligned)
@@ -77,9 +77,9 @@ entity {{ app_name }}_volo_main is
         OutputC : out signed(15 downto 0){% endif %}{% if num_outputs >= 4 %};
         OutputD : out signed(15 downto 0){% endif %}
     );
-end entity {{ app_name }}_volo_main;
+end entity {{ app_name }}_custom_inst_main;
 
-architecture rtl of {{ app_name }}_volo_main is
+architecture rtl of {{ app_name }}_custom_inst_main is
 
     ----------------------------------------------------------------------------
     -- Internal Signals
@@ -174,19 +174,19 @@ begin
     --    - Enable: Gates functional work
     --
     -- 3. Testing:
-    --    - Create CocotB tests in tests/test_{{ app_name | lower }}_volo.py
+    --    - Create CocotB tests in tests/test_{{ app_name | lower }}_custom_inst.py
     --    - Test with friendly signals directly
     --    - Simulate without MCC infrastructure
     --
     -- 4. BRAM Usage:
-    --    - Loaded during deployment via volo_loader.py
+    --    - Loaded during deployment via custom_inst_loader.py
     --    - Contains application-specific data (LUTs, waveforms, etc.)
     --    - Read-only after loading (typically)
     --
     -- 5. References:
     --    - CLAUDE.md: Standard control signals, coding standards
     --    - tests/README.md: CocotB testing framework
-    --    - docs/VOLO_APP_DESIGN.md: Complete architecture
+    --    - docs/CUSTOM_INSTRUMENT_MIGRATION_PLAN.md: Complete architecture
     ----------------------------------------------------------------------------
 
 end architecture rtl;
