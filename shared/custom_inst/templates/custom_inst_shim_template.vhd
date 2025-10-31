@@ -51,6 +51,12 @@ entity {{ app_name }}_custom_inst_shim is
         loader_done : in  std_logic;  -- BRAM loader FSM done signal
 
         ------------------------------------------------------------------------
+        -- Handshaking Protocol
+        -- Main application controls when register updates are safe
+        ------------------------------------------------------------------------
+        ready_for_updates : in  std_logic;  -- From main application
+
+        ------------------------------------------------------------------------
         -- Application Registers (from MCC_TOP_custom_inst_loader)
         -- Raw Control Registers CR6-CR15 (max 10 registers)
         ------------------------------------------------------------------------
@@ -109,14 +115,38 @@ begin
     global_enable <= combine_volo_ready(volo_ready, user_enable, clk_enable, loader_done);
 
     ----------------------------------------------------------------------------
-    -- Register Mapping: Control Registers → Friendly Signals
+    -- Atomic Register Update Process
     --
-    -- Extract appropriate bit ranges from raw Control Registers
-    -- based on register type (COUNTER_8BIT, PERCENT, BUTTON)
+    -- Implements gated latching controlled by ready_for_updates signal.
+    -- When ready_for_updates='0', shim holds previous values (gate closed).
+    -- When ready_for_updates='1', shim latches current CR values atomically.
+    --
+    -- Reference: HandShakeProtocol.md v2.0 (lines 106-122)
     ----------------------------------------------------------------------------
+    REGISTER_UPDATE_PROC: process(Clk)
+    begin
+        if rising_edge(Clk) then
+            if Reset = '1' then
+                -- Load default values from YAML specification
+                -- These ensure safe startup state before network writes
+                -- TODO Phase 4C: Replace type-based defaults with YAML default_value field
 {% for reg in registers %}
-    {{ reg.friendly_name }} <= app_reg_{{ reg.cr_number }}{{ reg.bit_range }};  -- {{ reg.original_name }}
+    {% if reg.reg_type == 'BUTTON' %}
+                {{ reg.friendly_name }} <= '0';  -- {{ reg.original_name }} (BUTTON default)
+    {% else %}
+                {{ reg.friendly_name }} <= (others => '0');  -- {{ reg.original_name }} ({{ reg.reg_type }} default)
+    {% endif %}
 {% endfor %}
+            elsif ready_for_updates = '1' then
+                -- Atomic update: Latch all registers together in same cycle
+                -- Main application has signaled it's safe to apply changes
+{% for reg in registers %}
+                {{ reg.friendly_name }} <= app_reg_{{ reg.cr_number }}{{ reg.bit_range }};  -- {{ reg.original_name }}
+{% endfor %}
+            end if;
+            -- else: Hold previous values (gate closed, main app is busy)
+        end if;
+    end process REGISTER_UPDATE_PROC;
 
     ----------------------------------------------------------------------------
     -- Instantiate Application Main Entity
@@ -130,6 +160,9 @@ begin
             Reset   => Reset,
             Enable  => global_enable,
             ClkEn   => clk_enable,
+
+            -- Handshaking Protocol
+            ready_for_updates => ready_for_updates,  -- From main to shim for gating updates
 
             -- Friendly Application Signals
 {% for reg in registers %}

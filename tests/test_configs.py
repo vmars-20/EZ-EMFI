@@ -5,6 +5,7 @@ Auto-discovered by run.py - no Makefile needed!
 Module categories:
 - volo_modules: Reusable VHDL building blocks
 - ds1120_pd: DS1120-PD EMFI probe driver application
+- handshake: Handshaking protocol validation tests
 - examples: Educational examples and demos
 
 Author: EZ-EMFI Team (adapted from volo-vhdl)
@@ -19,6 +20,7 @@ from typing import List
 PROJECT_ROOT = Path(__file__).parent.parent
 VHDL = PROJECT_ROOT / "VHDL"
 VHDL_PKG = VHDL / "packages"
+SHARED = PROJECT_ROOT / "shared"
 TESTS = PROJECT_ROOT / "tests"
 
 
@@ -136,6 +138,19 @@ TESTS_CONFIG = {
         toplevel="ds1140_pd_volo_main",  # lowercase for GHDL
         test_module="test_ds1140_pd_progressive",  # Progressive P1/P2 tests
         category="ds1140_pd",
+    ),
+
+    # === Handshaking Protocol Tests ===
+
+    "handshake_shim": TestConfig(
+        name="handshake_shim",
+        sources=[
+            SHARED / "custom_inst" / "custom_inst_common_pkg.vhd",
+            VHDL / "test_shim_handshake.vhd",
+        ],
+        toplevel="test_shim_handshake",  # lowercase for GHDL
+        test_module="test_handshake_shim_progressive",  # P1/P2 progressive tests
+        category="handshake",
     ),
 
     # === Examples & Demos ===

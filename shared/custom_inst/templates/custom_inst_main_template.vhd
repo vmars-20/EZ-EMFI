@@ -47,6 +47,12 @@ entity {{ app_name }}_custom_inst_main is
         ClkEn   : in  std_logic;  -- Clock enable (freezes sequential logic)
 
         ------------------------------------------------------------------------
+        -- Handshaking Protocol
+        -- Signal to shim layer when register updates are safe
+        ------------------------------------------------------------------------
+        ready_for_updates : out std_logic;  -- To shim layer
+
+        ------------------------------------------------------------------------
         -- Application Signals (Friendly Names)
         -- These are mapped from Control Registers by the shim layer
         ------------------------------------------------------------------------
@@ -99,6 +105,73 @@ architecture rtl of {{ app_name }}_custom_inst_main is
     -- constant IDLE_STATE : std_logic_vector(1 downto 0) := "00";
     -- constant MAX_COUNT  : natural := 1000;
 
+    ----------------------------------------------------------------------------
+    -- Register Update Handshaking Protocol
+    --
+    -- The ready_for_updates signal controls when configuration register updates
+    -- are applied by the shim layer. This prevents mid-operation glitches.
+    --
+    -- Reference: HandShakeProtocol.md v2.0
+    --
+    -- PATTERN A: Always Ready (Simple Applications)
+    -- Use for applications that can safely accept configuration changes anytime:
+    --
+    --     ready_for_updates <= '1';  -- Always accept updates
+    --
+    -- Suitable for:
+    --   - Stateless applications (e.g., simple filters, passthrough)
+    --   - Applications where config changes have no critical timing
+    --   - Development/testing (accept updates freely)
+    --
+    -- PATTERN B: FSM-Gated (Complex Applications)
+    -- Use for applications with critical timing sequences that must not be
+    -- interrupted by configuration changes:
+    --
+    --     process(Clk)
+    --     begin
+    --         if rising_edge(Clk) then
+    --             case fsm_state is
+    --                 when IDLE | READY =>
+    --                     ready_for_updates <= '1';  -- Safe to reconfigure
+    --
+    --                 when ARMED | ACTIVE | CLEANUP =>
+    --                     ready_for_updates <= '0';  -- Lock configuration
+    --             end case;
+    --         end if;
+    --     end process;
+    --
+    -- Suitable for:
+    --   - EMFI probe drivers (lock config during pulse generation)
+    --   - Waveform generators (lock during burst)
+    --   - Time-critical state machines
+    --
+    -- IMPORTANT NOTES:
+    --
+    -- 1. Shim Behavior (automatic):
+    --    - When ready='0': Shim holds previous values (gate closed)
+    --    - When ready='1': Shim latches current CR values (atomic update)
+    --    - All registers update together in same cycle (no partial updates)
+    --
+    -- 2. No Double-Latching Required:
+    --    - Use friendly signals directly in your logic
+    --    - They are stable between updates (held by shim process)
+    --    - Example: dac_output <= intensity;  (no extra latch needed)
+    --
+    -- 3. Reset Behavior:
+    --    - Shim loads safe defaults from YAML on reset
+    --    - Your logic sees consistent values from startup
+    --
+    -- 4. Network Write Timing:
+    --    - User writes CR6 over network → Shim sees new value immediately
+    --    - If ready='0': Shim keeps outputting old value to main
+    --    - If ready='1': Shim outputs new value on next clock cycle
+    --    - Result: Main app never sees partial/glitched values
+    --
+    -- 5. Default Implementation:
+    --    - Template provides Pattern A (always ready) as default
+    --    - Change to Pattern B if you need critical-section protection
+    ----------------------------------------------------------------------------
+
 begin
 
     ----------------------------------------------------------------------------
@@ -136,6 +209,37 @@ begin
     --         -- ClkEn='0': Hold state (no updates)
     --     end if;
     -- end process;
+    ----------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------
+    -- Default Handshaking Implementation
+    --
+    -- TODO: Customize for your application's needs
+    --
+    -- Default: Always ready (Pattern A)
+    -- Change to FSM-gated (Pattern B) if you need to lock config during
+    -- critical operations.
+    ----------------------------------------------------------------------------
+    ready_for_updates <= '1';  -- Default: Always accept updates
+
+    -- TODO: If using Pattern B (FSM-gated), replace above with FSM logic:
+    --
+    -- process(Clk)
+    -- begin
+    --     if rising_edge(Clk) then
+    --         case fsm_state is
+    --             when IDLE | READY =>
+    --                 ready_for_updates <= '1';
+    --             when ARMED | ACTIVE | CLEANUP =>
+    --                 ready_for_updates <= '0';
+    --         end case;
+    --     end if;
+    -- end process;
+
+    ----------------------------------------------------------------------------
+    -- Application Outputs (Placeholder)
+    --
+    -- TODO: Replace these placeholders with your actual application logic
     ----------------------------------------------------------------------------
 
     -- Placeholder: Remove when implementing
